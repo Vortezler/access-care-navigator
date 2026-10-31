@@ -12,6 +12,9 @@ export async function POST(req: Request) {
   let body: { symptoms?: unknown; lang?: unknown };
   try {
     body = await req.json();
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ errors: ["Request body must be a JSON object."] }, { status: 400 });
+    }
   } catch {
     return NextResponse.json({ errors: ["Request body must be valid JSON."] }, { status: 400 });
   }

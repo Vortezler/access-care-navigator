@@ -21,6 +21,9 @@ export async function POST(req: Request) {
   let body: { messages?: unknown; lang?: unknown; tz?: unknown; profile?: unknown };
   try {
     body = await req.json();
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json({ errors: ["Request body must be a JSON object."] }, { status: 400 });
+    }
   } catch {
     return bad("Request body must be valid JSON.");
   }
