@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from "react";
 import { Close } from "./Icons";
+import { useT } from "./I18nProvider";
 
 interface Props {
   open: boolean;
@@ -17,6 +18,7 @@ interface Props {
  * and reopening mid-exit cancels the close instead of waiting for it.
  */
 export default function Dialog({ open, onClose, title, subtitle, children }: Props) {
+  const t = useT();
   const ref = useRef<HTMLDialogElement>(null);
   const closeTimer = useRef<number | null>(null);
   const titleId = useId();
@@ -71,7 +73,7 @@ export default function Dialog({ open, onClose, title, subtitle, children }: Pro
           <h2 className="dialog__title" id={titleId}>
             {title}
           </h2>
-          <button type="button" className="btn btn--ghost dialog__close" onClick={onClose} aria-label="Close">
+          <button type="button" className="btn btn--ghost dialog__close" onClick={onClose} aria-label={t.common.close}>
             <Close />
           </button>
         </div>

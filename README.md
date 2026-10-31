@@ -9,6 +9,32 @@ People with disabilities pay a "disability tax": hours spent phoning clinic afte
 
 The interface is accessibility-first: full keyboard support, visible focus everywhere, a label on every input, live regions for async status, an error summary that links to each field, 44 px+ touch targets, and WCAG AA or better contrast (most text is AAA). It respects `prefers-reduced-motion`, `prefers-reduced-transparency`, `prefers-contrast` and forced-colors mode.
 
+### Care Guide: chat or talk, with medical documents (`/guide`)
+
+A conversational assistant for people who'd rather talk it through than fill in a form.
+- **Reads your PDFs.** Upload referral letters, visit summaries, test results or an insurance card: up to 3 per message, 10 MB each, 6 per conversation. Claude reads each one natively as a PDF. It explains in plain words what matters for booking ("your referral is to neurology") and confirms any accessibility needs it finds before using them.
+- **Acts with tools.** It runs a real tool-use loop on the server, up to 6 rounds per reply:
+  - `find_clinics` searches the same directory and scoring as the form, with open slots labelled in your time zone.
+  - `book_appointment` makes a simulated booking. It works only at online-booking clinics, only for a listed slot, and only after you've said yes.
+  - `show_call_script` writes a script for phone-only clinics, with copy, listen and remind-me buttons.
+  - `add_to_calendar` shows a Google Calendar / .ics card. You press it to save.
+
+  Every tool result appears as a card in the chat, and the model is told never to invent clinics, times or features.
+- **Voice conversation.** Press **Start voice conversation** and talk hands-free. It listens, sends what you said, reads the reply aloud in your language, then listens again. You can stop it speaking or end the conversation at any time. **Read replies aloud** speaks replies even while you type. A mic button on the message box also lets you dictate.
+- **Context without accounts.** The conversation stays in the browser tab and is re-sent each turn. Each reply carries a short note of what its tools returned (clinic ids, slots, confirmations), so later turns still know about them. If you've used the search form, the guide already knows your name, insurance and needs.
+- **Same safety rules.** It's not a doctor, it never diagnoses, it suggests a general physician when unsure, and emergencies get a call-911 answer first. With no AI configured, it says so plainly in your language and points you to the form.
+
+### Six languages, end to end
+
+**English, Español, 中文 (Mandarin, Simplified), Tiếng Việt, Français, हिन्दी.** Use the header picker or the Display panel. The first visit follows the browser's language, and your choice is remembered in the browser.
+- Every interface string is translated. The dictionaries in `lib/i18n/` are type-checked against English, so a missing string fails the build.
+- The AI writes clinic explanations, call scripts, specialist suggestions and Care Guide replies in your language.
+- The fallback templates used when no AI is available are translated too, including the full call script.
+- Voice typing and read-aloud switch to the matching speech locale (`es-US`, `zh-CN`, `vi-VN`, `fr-FR`, `hi-IN`) and pick a matching voice.
+- Dates and times use your language's format.
+- The no-AI emergency safety net recognizes red-flag phrases in all six languages.
+- Spoken durations ("dos semanas", "两周") and specialty names in each language are understood.
+
 ### "Which specialist should I see?"
 
 People often don't know which kind of doctor to book. Describe your symptoms in your own words and choose **Suggest the right specialist**. Claude reads the whole description, including negations ("no chest pain"), how long it has gone on, age, pregnancy and past diagnoses. It then picks the best first stop from the ten specialties, **selects it in the form for you** and explains why in plain language. It gives a confidence level, up to two alternatives you can switch to in one click, and an urgency check:
@@ -131,6 +157,10 @@ Results ── online booking? ──▶ BookingModal: pick slot → mock CONF-X
 | `components/ScrollEffects.tsx` | Scroll-triggered reveals and the header's scroll state |
 | `lib/triage.ts`, `app/api/suggest-specialty/route.ts`, `components/SuggestionCard.tsx` | Specialist suggestion: prompt, JSON schema, validation, safe fallback, UI and disclaimer |
 | `lib/voice.ts`, `components/VoiceInput.tsx` | Voice typing: browser speech recognition and spoken-value cleanup |
+| `lib/care-guide.ts`, `app/api/chat/route.ts` | Care Guide: tools, system prompt, tool-use loop, PDF/size validation |
+| `app/guide/page.tsx`, `components/CareGuide.tsx`, `components/GuideActionCard.tsx` | Chat UI, PDF attachments, hands-free voice conversation, tool-result cards |
+| `lib/i18n/*.ts`, `components/I18nProvider.tsx` | Dictionaries for 6 languages (type-checked against English) and the language context |
+| `lib/booking.ts` | Simulated booking shared by the dialog and the Care Guide |
 
 **Choices that differ slightly from a literal reading of the plan:**
 - Insurance is **scored, not hard-filtered**. A payer that isn't listed still gets results, clearly flagged "Out-of-network — verify", instead of an empty page.

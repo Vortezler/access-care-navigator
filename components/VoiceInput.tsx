@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Recognition } from "@/lib/voice";
-import { claim, errorMessage, getRecognitionCtor, release } from "@/lib/voice";
+import { claim, errorKey, getRecognitionCtor, release } from "@/lib/voice";
 import { useA11y } from "./A11yProvider";
+import { useI18n } from "./I18nProvider";
 import { Mic } from "./Icons";
 
 interface Props {
@@ -25,6 +26,7 @@ interface Props {
  */
 export default function VoiceInput({ fieldLabel, targetId, onTranscript, continuous = false, onStart }: Props) {
   const { stop: stopReading } = useA11y();
+  const { t, speech } = useI18n();
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
   const [status, setStatus] = useState("");
@@ -46,7 +48,7 @@ export default function VoiceInput({ fieldLabel, targetId, onTranscript, continu
     stopReading(); // don't let read-aloud talk into the microphone
     onStart?.();
     const r = new Ctor();
-    r.lang = document.documentElement.lang || "en-US";
+    r.lang = speech;
     r.continuous = continuous;
     r.interimResults = true;
     let finalText = "";
@@ -62,24 +64,24 @@ export default function VoiceInput({ fieldLabel, targetId, onTranscript, continu
     };
     r.onerror = (e) => {
       if (e.error === "aborted") return;
-      setError(errorMessage(e.error));
+      setError(t.voice.errors[errorKey(e.error)]);
     };
     r.onend = () => {
       release(r);
       setListening(false);
-      setStatus(finalText ? `Got it: ${finalText.trim()}` : "");
+      setStatus(finalText ? t.voice.got(finalText.trim()) : "");
       document.getElementById(targetId)?.focus();
     };
     claim(r);
     rec.current = r;
     setError(null);
-    setStatus(`Listening for ${fieldLabel}. Speak now.`);
+    setStatus(t.voice.listening(fieldLabel));
     setListening(true);
     try {
       r.start();
     } catch {
       setListening(false);
-      setError(errorMessage(""));
+      setError(t.voice.errors.generic);
     }
   }
 
@@ -92,8 +94,8 @@ export default function VoiceInput({ fieldLabel, targetId, onTranscript, continu
       <button
         type="button"
         className={`mic${listening ? " mic--on" : ""}`}
-        aria-label={listening ? `Stop voice typing for ${fieldLabel}` : `Speak ${fieldLabel}`}
-        title={listening ? "Stop voice typing" : "Voice typing"}
+        aria-label={listening ? t.voice.stop(fieldLabel) : t.voice.speak(fieldLabel)}
+        title={listening ? t.voice.stopTitle : t.voice.title}
         onClick={listening ? stop : start}
       >
         <Mic />

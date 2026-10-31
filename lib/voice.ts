@@ -41,28 +41,33 @@ export function release(r: Recognition) {
   if (active === r) active = null;
 }
 
-export function errorMessage(code: string): string {
+/** Speech-recognition error code -> key into the dictionary's voice.errors */
+export function errorKey(code: string): "blocked" | "noSpeech" | "noMic" | "network" | "generic" {
   switch (code) {
     case "not-allowed":
     case "service-not-allowed":
-      return "Microphone access is blocked. Allow it in your browser's site settings, then try again.";
+      return "blocked";
     case "no-speech":
-      return "We didn't hear anything. Try again and speak after the tone.";
+      return "noSpeech";
     case "audio-capture":
-      return "No microphone was found.";
+      return "noMic";
     case "network":
-      return "Voice typing needs an internet connection in this browser.";
+      return "network";
     default:
-      return "Voice typing stopped unexpectedly. Please try again.";
+      return "generic";
   }
 }
 
 // ---------- Turning speech into field values ----------
 
+// Number words recognisers sometimes return instead of digits (most return digits in every language).
 const SMALL: Record<string, number> = {
   a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
   eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18,
   nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, ninety: 90, couple: 2, few: 3,
+  un: 1, una: 1, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, une: 1, deux: 2, trois: 3, quatre: 4,
+  một: 1, hai: 2, ba: 3, bốn: 4, năm: 5, एक: 1, दो: 2, तीन: 3, चार: 4, पाँच: 5,
+  一: 1, 两: 2, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10,
 };
 
 /** "14", "fourteen", "two weeks", "a month", "twenty one days" -> number of days. */
@@ -72,7 +77,8 @@ export function parseDays(spoken: string): number | null {
   const digits = t.match(/\d+/);
   if (digits) n = Number(digits[0]);
   else {
-    const words = t.split(/\s+/);
+    // Chinese has no spaces between words, so look at each character there
+    const words = /[一-鿿]/.test(t) ? [...t] : t.split(/\s+/);
     let total = 0;
     let found = false;
     for (const w of words) {
@@ -84,8 +90,8 @@ export function parseDays(spoken: string): number | null {
     if (found) n = total;
   }
   if (n === null) return null;
-  if (/week/.test(t)) n *= 7;
-  else if (/month/.test(t)) n *= 30;
+  if (/week|semana|semaine|tuần|周|星期|हफ़्त|हफ्त|सप्ताह/.test(t)) n *= 7;
+  else if (/month|mes|mois|tháng|月|महीन/.test(t)) n *= 30;
   return n;
 }
 
@@ -99,9 +105,20 @@ export function normalizeId(spoken: string): string {
     .toUpperCase();
 }
 
-/** Match a spoken specialty name (people say it many ways) to one of our options. */
-export function matchSpecialty(spoken: string): Specialty | null {
+/**
+ * Match a spoken specialty name (people say it many ways) to one of our options.
+ * `localized` is the current language's display names, checked first.
+ */
+export function matchSpecialty(spoken: string, localized?: Record<Specialty, string>): Specialty | null {
   const t = spoken.toLowerCase();
+  if (localized) {
+    const norm = (x: string) => x.toLowerCase().replace(/\(.*?\)|（.*?）/g, "").trim();
+    const hit = SPECIALTIES.find((s) => {
+      const name = norm(localized[s]);
+      return name.length > 1 && (t.includes(name) || (t.trim().length >= 3 && name.includes(t.trim())));
+    });
+    if (hit) return hit;
+  }
   const table: [RegExp, Specialty][] = [
     [/primary|general|family|\bgp\b|regular doctor/, "Primary Care"],
     [/\bob\b|\bo b\b|gyn|obstet|women/, "OB/GYN"],

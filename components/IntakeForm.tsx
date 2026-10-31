@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AccessibilityKey, IntakeData, MatchResult, Specialty, SpecialtySuggestion, TextSource } from "@/lib/types";
-import { ACCESSIBILITY_KEYS, ACCESSIBILITY_LABELS, SPECIALTIES } from "@/lib/types";
+import { ACCESSIBILITY_KEYS, SPECIALTIES } from "@/lib/types";
 import { loadIntakeDraft, saveSession } from "@/lib/session";
 import { matchSpecialty, normalizeId, parseDays } from "@/lib/voice";
 import SuggestionCard from "./SuggestionCard";
+import { useI18n } from "./I18nProvider";
 import VoiceInput from "./VoiceInput";
 import { Alert, Check, Compass } from "./Icons";
 
@@ -56,41 +57,27 @@ const SAMPLE: Form = {
   autonomyMode: "auto_book_preferred",
 };
 
-const ACCESS_DESC: Record<AccessibilityKey, string> = {
-  wheelchairAccessibleExamRoom: "Room to turn and transfer, step-free entry",
-  adjustableHeightExamTable: "Lowers for a safe transfer from a chair",
-  sensoryQuietWaitingRoom: "Low light, low noise, a calm place to wait",
-  aslInterpreterRequired: "Qualified in-person or video interpreter",
-  serviceAnimalFriendly: "Your service animal is welcome in every room",
-};
-
 const HAS_HELP = new Set<FieldKey>(["insurancePayer", "memberId", "urgencyWindowDays", "reasonForVisit"]);
 
-const LABELS: Record<FieldKey, string> = {
-  patientName: "Your name",
-  insurancePayer: "Insurance",
-  memberId: "Member ID",
-  specialty: "Specialty",
-  reasonForVisit: "What's going on? (reason for visit)",
-  urgencyWindowDays: "How soon you need to be seen",
-};
-
-function validate(f: Form): Partial<Record<FieldKey, string>> {
-  const e: Partial<Record<FieldKey, string>> = {};
-  if (!f.patientName.trim()) e.patientName = "Enter your name.";
-  if (!f.insurancePayer.trim()) e.insurancePayer = "Enter your insurance company, for example Aetna.";
-  if (!f.memberId.trim()) e.memberId = "Enter your member ID.";
-  if (!f.specialty) e.specialty = "Choose a specialty.";
-  if (!f.reasonForVisit.trim()) e.reasonForVisit = "Tell us briefly why you need this visit.";
+/** Returns the fields that are invalid; the message comes from the dictionary. */
+function validate(f: Form): Partial<Record<FieldKey, true>> {
+  const e: Partial<Record<FieldKey, true>> = {};
+  if (!f.patientName.trim()) e.patientName = true;
+  if (!f.insurancePayer.trim()) e.insurancePayer = true;
+  if (!f.memberId.trim()) e.memberId = true;
+  if (!f.specialty) e.specialty = true;
+  if (!f.reasonForVisit.trim()) e.reasonForVisit = true;
   const d = Number(f.urgencyWindowDays);
-  if (!Number.isInteger(d) || d < 1 || d > 365) e.urgencyWindowDays = "Enter a whole number of days from 1 to 365.";
+  if (!Number.isInteger(d) || d < 1 || d > 365) e.urgencyWindowDays = true;
   return e;
 }
 
 export default function IntakeForm() {
   const router = useRouter();
+  const { t, lang } = useI18n();
+  const LABELS = t.form.labels;
   const [form, setForm] = useState<Form>(EMPTY);
-  const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<FieldKey, true>>>({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -128,20 +115,20 @@ export default function IntakeForm() {
     const text = form.reasonForVisit.trim();
     setSuggestError(null);
     if (text.length < 3) {
-      setSuggestError("Describe what's going on first. A sentence or two is plenty.");
+      setSuggestError(t.suggest.needText);
       document.getElementById("reasonForVisit")?.focus();
       return;
     }
     setSuggesting(true);
-    setStatus("Thinking about which specialist fits…");
+    setStatus(t.suggest.status);
     try {
       const res = await fetch("/api/suggest-specialty", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symptoms: text }),
+        body: JSON.stringify({ symptoms: text, lang }),
       });
       const json = (await res.json()) as { suggestion?: SpecialtySuggestion; source?: TextSource; errors?: string[] };
-      if (!res.ok || !json.suggestion) throw new Error(json.errors?.join(" ") || "Couldn't get a suggestion.");
+      if (!res.ok || !json.suggestion) throw new Error(json.errors?.join(" ") || t.suggest.failed);
       const sug = json.suggestion;
       setSuggestion({ value: sug, source: json.source ?? "template", forText: text });
       // Choose it for them; they can change it.
@@ -162,7 +149,7 @@ export default function IntakeForm() {
 
   function chooseSpecialty(sp: Specialty) {
     update("specialty", sp);
-    setStatus(`${sp} selected.`);
+    setStatus(t.form.selected(t.specialties[sp]));
   }
 
   function toggleNeed(key: AccessibilityKey) {
@@ -172,7 +159,7 @@ export default function IntakeForm() {
   function fillSample() {
     setForm(SAMPLE);
     setErrors({});
-    setStatus("Sample patient filled in. Review and submit when ready.");
+    setStatus(t.form.sampleFilled);
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -189,22 +176,22 @@ export default function IntakeForm() {
 
     const intake: IntakeData = { ...form, urgencyWindowDays: Number(form.urgencyWindowDays) };
     setLoading(true);
-    setStatus("Finding accessible clinics for you…");
+    setStatus(t.form.submitting);
     try {
       const res = await fetch("/api/match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(intake),
+        body: JSON.stringify({ ...intake, lang }),
       });
       const json = (await res.json()) as { results?: MatchResult[]; errors?: string[] };
-      if (!res.ok || !json.results) throw new Error(json.errors?.join(" ") || "Something went wrong.");
+      if (!res.ok || !json.results) throw new Error(json.errors?.join(" ") || t.form.somethingWrong);
       saveSession({ intake, results: json.results });
-      setStatus(`Found ${json.results.length} clinics. Opening results.`);
+      setStatus(t.form.found(json.results.length));
       router.push("/results");
     } catch (err) {
       setLoading(false);
       setStatus("");
-      setServerError((err as Error).message || "We couldn't reach the server. Please try again.");
+      setServerError((err as Error).message || t.form.networkError);
       requestAnimationFrame(() => summaryRef.current?.focus());
     }
   }
@@ -221,7 +208,7 @@ export default function IntakeForm() {
     errors[k] ? (
       <span className="field__error" id={`${k}-error`}>
         <Alert size={15} />
-        {errors[k]}
+        {t.form.errors[k]}
       </span>
     ) : null;
 
@@ -236,14 +223,12 @@ export default function IntakeForm() {
           <div className="alert reveal" role="alert">
             {serverError ? (
               <>
-                <h2>We couldn&rsquo;t search right now</h2>
+                <h2>{t.form.serverErrorHeading}</h2>
                 <p style={{ margin: 0 }}>{serverError}</p>
               </>
             ) : (
               <>
-                <h2>
-                  Please fix {errorKeys.length} {errorKeys.length === 1 ? "thing" : "things"} before we search
-                </h2>
+<h2>{t.form.errorsHeading(errorKeys.length)}</h2>
                 <ul>
                   {errorKeys.map((k) => (
                     <li key={k}>
@@ -254,7 +239,7 @@ export default function IntakeForm() {
                           document.getElementById(k)?.focus();
                         }}
                       >
-                        {LABELS[k]}: {errors[k]}
+                        {LABELS[k]}: {t.form.errors[k]}
                       </a>
                     </li>
                   ))}
@@ -267,12 +252,9 @@ export default function IntakeForm() {
 
       <fieldset className="panel" data-reveal style={{ ["--i" as string]: 1 }}>
         <legend className="panel__legend">
-          <span className="panel__step" aria-hidden>01</span>About you
+          <span className="panel__step" aria-hidden>01</span>{t.form.s1Title}
         </legend>
-        <p className="panel__hint">
-          So the clinic knows who&rsquo;s calling. This is a demo — use any details you like. Every box has a microphone
-          button if you&rsquo;d rather speak than type.
-        </p>
+        <p className="panel__hint">{t.form.s1Hint}</p>
         <div className="field">
           <label className="field__label" htmlFor="patientName">{LABELS.patientName}</label>
           <div className="with-mic">
@@ -283,7 +265,7 @@ export default function IntakeForm() {
               value={form.patientName}
               onChange={(e) => update("patientName", e.target.value)}
             />
-            <VoiceInput fieldLabel="your name" targetId="patientName" onTranscript={(t) => update("patientName", titleCase(t))} />
+            <VoiceInput fieldLabel={t.form.mic.patientName} targetId="patientName" onTranscript={(t) => update("patientName", titleCase(t))} />
           </div>
           <FieldError k="patientName" />
         </div>
@@ -294,17 +276,17 @@ export default function IntakeForm() {
               <input
                 className="input"
                 {...fieldProps("insurancePayer")}
-                placeholder="e.g. Aetna, Medicaid"
+                placeholder={t.form.insurancePlaceholder}
                 value={form.insurancePayer}
                 onChange={(e) => update("insurancePayer", e.target.value)}
               />
               <VoiceInput
-                fieldLabel="your insurance company"
+                fieldLabel={t.form.mic.insurancePayer}
                 targetId="insurancePayer"
                 onTranscript={(t) => update("insurancePayer", titleCase(t))}
               />
             </div>
-            <span className="field__help" id="insurancePayer-help">The company name on your card.</span>
+            <span className="field__help" id="insurancePayer-help">{t.form.help.insurancePayer}</span>
             <FieldError k="insurancePayer" />
           </div>
           <div className="field">
@@ -318,11 +300,9 @@ export default function IntakeForm() {
                 value={form.memberId}
                 onChange={(e) => update("memberId", e.target.value)}
               />
-              <VoiceInput fieldLabel="your member ID" targetId="memberId" onTranscript={(t) => update("memberId", normalizeId(t))} />
+              <VoiceInput fieldLabel={t.form.mic.memberId} targetId="memberId" onTranscript={(t) => update("memberId", normalizeId(t))} />
             </div>
-            <span className="field__help" id="memberId-help">
-              Only used inside your call script. Say &ldquo;dash&rdquo; for a hyphen.
-            </span>
+            <span className="field__help" id="memberId-help">{t.form.help.memberId}</span>
             <FieldError k="memberId" />
           </div>
         </div>
@@ -330,9 +310,9 @@ export default function IntakeForm() {
 
       <fieldset className="panel" data-reveal style={{ ["--i" as string]: 2 }}>
         <legend className="panel__legend">
-          <span className="panel__step" aria-hidden>02</span>The care you need
+          <span className="panel__step" aria-hidden>02</span>{t.form.s2Title}
         </legend>
-        <p className="panel__hint">Tell us what&rsquo;s going on. Pick a specialty yourself, or let us suggest one.</p>
+        <p className="panel__hint">{t.form.s2Hint}</p>
         <div className="field">
           <label className="field__label" htmlFor="reasonForVisit">{LABELS.reasonForVisit}</label>
           <div className="with-mic">
@@ -343,7 +323,7 @@ export default function IntakeForm() {
               onChange={(e) => update("reasonForVisit", e.target.value)}
             />
             <VoiceInput
-              fieldLabel="your reason for visit"
+              fieldLabel={t.form.mic.reasonForVisit}
               targetId="reasonForVisit"
               continuous
               onStart={() => {
@@ -352,9 +332,7 @@ export default function IntakeForm() {
               onTranscript={(t) => update("reasonForVisit", appendDictation(dictationBase.current, t))}
             />
           </div>
-          <span className="field__help" id="reasonForVisit-help">
-            Your symptoms in your own words: what it feels like, where, for how long, and what makes it better or worse.
-          </span>
+          <span className="field__help" id="reasonForVisit-help">{t.form.help.reasonForVisit}</span>
           <FieldError k="reasonForVisit" />
         </div>
 
@@ -367,18 +345,16 @@ export default function IntakeForm() {
                   <span />
                   <span />
                 </span>
-                Thinking it through…
+                {t.suggest.thinking}
               </>
             ) : (
               <>
                 <Compass />
-                {suggestion ? "Suggest again" : "Suggest the right specialist"}
+                {suggestion ? t.suggest.again : t.suggest.button}
               </>
             )}
           </button>
-          <span className="field__help" id="suggest-note">
-            An AI suggestion, not medical advice. A general physician can confirm the right specialist.
-          </span>
+          <span className="field__help" id="suggest-note">{t.suggest.note}</span>
         </div>
         {suggestError && (
           <p className="field__error" role="alert">
@@ -408,29 +384,29 @@ export default function IntakeForm() {
                 onChange={(e) => update("specialty", e.target.value)}
               >
                 <option value="" disabled>
-                  Choose one…
+                  {t.form.chooseOne}
                 </option>
                 {SPECIALTIES.map((s) => (
                   <option key={s} value={s}>
-                    {s}
+                    {t.specialties[s]}
                   </option>
                 ))}
               </select>
               <VoiceInput
-                fieldLabel="a specialty"
+                fieldLabel={t.form.mic.specialty}
                 targetId="specialty"
-                onTranscript={(t, isFinal) => {
+                onTranscript={(spoken, isFinal) => {
                   if (!isFinal) return;
-                  const sp = matchSpecialty(t);
+                  const sp = matchSpecialty(spoken, t.specialties);
                   if (sp) chooseSpecialty(sp);
-                  else setStatus(`Didn't recognise "${t}" as a specialty. Try saying, for example, "neurology".`);
+                  else setStatus(t.form.voiceNoSpecialty(spoken));
                 }}
               />
             </div>
             <FieldError k="specialty" />
           </div>
           <div className="field">
-            <label className="field__label" htmlFor="urgencyWindowDays">Need to be seen within (days)</label>
+            <label className="field__label" htmlFor="urgencyWindowDays">{LABELS.urgencyWindowDays}</label>
             <div className="with-mic">
               <input
                 className="input"
@@ -443,19 +419,17 @@ export default function IntakeForm() {
                 onChange={(e) => update("urgencyWindowDays", e.target.value)}
               />
               <VoiceInput
-                fieldLabel="how many days"
+                fieldLabel={t.form.mic.urgencyWindowDays}
                 targetId="urgencyWindowDays"
-                onTranscript={(t, isFinal) => {
+                onTranscript={(spoken, isFinal) => {
                   if (!isFinal) return;
-                  const d = parseDays(t);
+                  const d = parseDays(spoken);
                   if (d !== null) update("urgencyWindowDays", String(d));
-                  else setStatus(`Didn't catch a number in "${t}". Try "14" or "two weeks".`);
+                  else setStatus(t.form.voiceNoNumber(spoken));
                 }}
               />
             </div>
-            <span className="field__help" id="urgencyWindowDays-help">
-              We&rsquo;ll highlight openings in this window. You can say &ldquo;two weeks&rdquo;.
-            </span>
+            <span className="field__help" id="urgencyWindowDays-help">{t.form.help.urgencyWindowDays}</span>
             <FieldError k="urgencyWindowDays" />
           </div>
         </div>
@@ -463,9 +437,9 @@ export default function IntakeForm() {
 
       <fieldset className="panel" data-reveal style={{ ["--i" as string]: 0 }}>
         <legend className="panel__legend">
-          <span className="panel__step" aria-hidden>03</span>Accessibility needs
+          <span className="panel__step" aria-hidden>03</span>{t.form.s3Title}
         </legend>
-        <p className="panel__hint">Choose everything that matters to you. We check each one, clinic by clinic.</p>
+        <p className="panel__hint">{t.form.s3Hint}</p>
         <div className="choices choices--2">
           {ACCESSIBILITY_KEYS.map((k) => (
             <label className="choice" key={k}>
@@ -476,8 +450,8 @@ export default function IntakeForm() {
                 </svg>
               </span>
               <span className="choice__text">
-                <span className="choice__title">{k === "aslInterpreterRequired" ? "ASL interpreter" : ACCESSIBILITY_LABELS[k]}</span>
-                <span className="choice__desc">{ACCESS_DESC[k]}</span>
+                <span className="choice__title">{t.access.short[k]}</span>
+                <span className="choice__desc">{t.access.desc[k]}</span>
               </span>
             </label>
           ))}
@@ -486,14 +460,14 @@ export default function IntakeForm() {
 
       <fieldset className="panel" data-reveal style={{ ["--i" as string]: 0 }}>
         <legend className="panel__legend">
-          <span className="panel__step" aria-hidden>04</span>How should we help?
+          <span className="panel__step" aria-hidden>04</span>{t.form.s4Title}
         </legend>
-        <p className="panel__hint">You stay in control either way.</p>
+        <p className="panel__hint">{t.form.s4Hint}</p>
         <div className="choices choices--2">
           {(
             [
-              ["auto_book_preferred", "Try to book for me", "Book online where a clinic allows it; script the rest."],
-              ["call_prep_only", "Just prepare a call script", "I'd rather make the call myself, with a script in hand."],
+              ["auto_book_preferred", t.form.autoTitle, t.form.autoDesc],
+              ["call_prep_only", t.form.callTitle, t.form.callDesc],
             ] as const
           ).map(([value, title, desc]) => (
             <label className="choice choice--radio" key={value}>
@@ -525,17 +499,17 @@ export default function IntakeForm() {
                 <span />
                 <span />
               </span>
-              Finding accessible clinics…
+              {t.form.submitting}
             </>
           ) : (
             <>
               <Check size={16} />
-              Find accessible clinics
+              {t.form.submit}
             </>
           )}
         </button>
         <button type="button" className="btn btn--secondary btn--lg" onClick={fillSample} disabled={loading}>
-          Use a sample patient
+          {t.form.sample}
         </button>
       </div>
     </form>

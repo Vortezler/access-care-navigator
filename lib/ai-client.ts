@@ -1,13 +1,14 @@
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import Anthropic from "@anthropic-ai/sdk";
-import type { AccessibilityRequirements, Clinic, IntakeData, TextSource } from "./types";
+import type { AccessibilityRequirements, Clinic, IntakeData, Specialty, TextSource } from "./types";
+import { getDict, type Dict } from "./i18n";
 import { ACCESSIBILITY_KEYS, ACCESSIBILITY_LABELS } from "./types";
 
 // Three-tier chain: Bedrock -> Anthropic API -> hand-written template.
 // The template tier means the demo never breaks, even with no keys at all.
 
 const TIMEOUT_MS = 20_000;
-const BEDROCK_MODEL_ID = process.env.BEDROCK_MODEL_ID || "anthropic.claude-opus-5-5";
+const BEDROCK_MODEL_ID = process.env.BEDROCK_MODEL_ID || "us.anthropic.claude-opus-5-5";
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-5-5";
 
 export interface Prompt {
@@ -30,7 +31,11 @@ let anthropic: Anthropic | null = null;
 function bedrockConfigured(): boolean {
   // Without explicit creds the AWS SDK walks its whole provider chain (incl. IMDS),
   // which is slow on a laptop. Only try Bedrock when the user set something up.
-  return Boolean(process.env.AWS_ACCESS_KEY_ID || process.env.AWS_PROFILE);
+  // AWS_BEARER_TOKEN_BEDROCK is the newer Bedrock API-key (bearer token) flow;
+  // the SDK itself auto-detects it, this just needs to also trigger the attempt.
+  return Boolean(
+    process.env.AWS_ACCESS_KEY_ID || process.env.AWS_PROFILE || process.env.AWS_BEARER_TOKEN_BEDROCK,
+  );
 }
 
 async function callBedrock(p: Prompt): Promise<string> {
@@ -71,6 +76,78 @@ async function callAnthropic(p: Prompt): Promise<string> {
   });
   if (res.stop_reason === "refusal") throw new Error("Anthropic: model declined");
   return extractText(res.content);
+}
+
+// ---------------------------------------------------------------------------
+// Raw multi-turn calls for the Care Guide's tool loop. Content blocks (including
+// thinking and tool_use blocks) are passed back unchanged within a loop.
+
+export type Provider = "bedrock" | "anthropic";
+
+export interface RawBlock {
+  type: string;
+  text?: string;
+  id?: string;
+  name?: string;
+  input?: unknown;
+  [k: string]: unknown;
+}
+
+export interface RawMessage {
+  content: RawBlock[];
+  stop_reason: string | null;
+}
+
+export interface RawRequest {
+  system: string;
+  messages: unknown[];
+  tools: unknown[];
+  maxTokens: number;
+  effort: "low" | "medium" | "high";
+  timeoutMs: number;
+}
+
+export function availableProviders(): Provider[] {
+  const out: Provider[] = [];
+  if (bedrockConfigured()) out.push("bedrock");
+  if (process.env.ANTHROPIC_API_KEY) out.push("anthropic");
+  return out;
+}
+
+export async function callRaw(provider: Provider, r: RawRequest): Promise<RawMessage> {
+  if (provider === "bedrock") {
+    bedrock ??= new BedrockRuntimeClient({ region: process.env.AWS_REGION || "us-east-1" });
+    const res = await bedrock.send(
+      new InvokeModelCommand({
+        modelId: BEDROCK_MODEL_ID,
+        contentType: "application/json",
+        accept: "application/json",
+        body: JSON.stringify({
+          anthropic_version: "bedrock-2023-05-31",
+          max_tokens: r.maxTokens,
+          system: r.system,
+          messages: r.messages,
+          tools: r.tools,
+        }),
+      }),
+      { abortSignal: AbortSignal.timeout(r.timeoutMs) },
+    );
+    const body = JSON.parse(new TextDecoder().decode(res.body)) as Partial<RawMessage>;
+    return { content: body.content ?? [], stop_reason: body.stop_reason ?? null };
+  }
+  anthropic ??= new Anthropic({ timeout: TIMEOUT_MS, maxRetries: 1 });
+  const res = await anthropic.messages.create(
+    {
+      model: ANTHROPIC_MODEL,
+      max_tokens: r.maxTokens,
+      output_config: { effort: r.effort },
+      system: r.system,
+      messages: r.messages as Anthropic.MessageParam[],
+      tools: r.tools as Anthropic.Tool[],
+    },
+    { timeout: r.timeoutMs },
+  );
+  return { content: res.content as unknown as RawBlock[], stop_reason: res.stop_reason };
 }
 
 function extractText(blocks: { type: string; text?: string }[]): string {
@@ -135,15 +212,20 @@ function extractJson(text: string): unknown {
 
 // ---------------------------------------------------------------------------
 
-function listNeeds(req: AccessibilityRequirements): string[] {
-  return ACCESSIBILITY_KEYS.filter((k) => req[k]).map((k) => ACCESSIBILITY_LABELS[k]);
+/** Tells the model which language to write in (the site's selected language). */
+export function languageRule(d: Dict): string {
+  return `Write everything in ${d.tpl.languageName}. Keep clinic names, addresses and phone numbers exactly as given.`;
 }
 
-function describeAccessibility(req: AccessibilityRequirements, clinic: Clinic) {
+function listNeeds(req: AccessibilityRequirements, labels: Record<string, string> = ACCESSIBILITY_LABELS): string[] {
+  return ACCESSIBILITY_KEYS.filter((k) => req[k]).map((k) => labels[k]);
+}
+
+function describeAccessibility(req: AccessibilityRequirements, clinic: Clinic, labels: Record<string, string> = ACCESSIBILITY_LABELS) {
   const wanted = ACCESSIBILITY_KEYS.filter((k) => req[k]);
   return {
-    met: wanted.filter((k) => clinic.accessibility[k]).map((k) => ACCESSIBILITY_LABELS[k]),
-    unmet: wanted.filter((k) => !clinic.accessibility[k]).map((k) => ACCESSIBILITY_LABELS[k]),
+    met: wanted.filter((k) => clinic.accessibility[k]).map((k) => labels[k]),
+    unmet: wanted.filter((k) => !clinic.accessibility[k]).map((k) => labels[k]),
   };
 }
 
@@ -155,24 +237,18 @@ export interface ExplanationInput {
   urgencyWindowDays: number;
 }
 
-export function templateExplanation(i: ExplanationInput): string {
-  const { met, unmet } = describeAccessibility(i.requirements, i.clinic);
+export function templateExplanation(i: ExplanationInput, d: Dict = getDict("en")): string {
+  const { met, unmet } = describeAccessibility(i.requirements, i.clinic, d.access.labels);
   const total = met.length + unmet.length;
-  const access =
-    total === 0
-      ? "You didn't select any accessibility requirements."
-      : `Meets ${met.length} of ${total} of your accessibility requirements${unmet.length ? ` (missing: ${unmet.join(", ").toLowerCase()})` : ""}.`;
-  const network = i.inNetwork
-    ? "In-network with your insurance."
-    : "May be out-of-network — verify before booking.";
+  const access = total === 0 ? d.tpl.noNeeds : d.tpl.meets(met.length, total, unmet.join(", ").toLowerCase());
+  const network = i.inNetwork ? d.tpl.inNetwork : d.tpl.outNetwork;
   const timing =
-    i.slotsInWindow > 0
-      ? `${i.slotsInWindow} opening${i.slotsInWindow === 1 ? "" : "s"} within your ${i.urgencyWindowDays}-day window.`
-      : `No listed openings within your ${i.urgencyWindowDays}-day window.`;
-  return `${access} ${network} ${timing}`;
+    i.slotsInWindow > 0 ? d.tpl.openings(i.slotsInWindow, i.urgencyWindowDays) : d.tpl.noOpenings(i.urgencyWindowDays);
+  // Languages that end sentences with full-width punctuation (Chinese) don't put spaces between them
+  return [access, network, timing].reduce((out, part) => (/[。！？]$/.test(out) ? out + part : `${out} ${part}`));
 }
 
-export function generateMatchExplanation(i: ExplanationInput): Promise<GeneratedText> {
+export function generateMatchExplanation(i: ExplanationInput, d: Dict = getDict("en")): Promise<GeneratedText> {
   const { met, unmet } = describeAccessibility(i.requirements, i.clinic);
   return generate(
     {
@@ -180,7 +256,8 @@ export function generateMatchExplanation(i: ExplanationInput): Promise<Generated
       system:
         "You help disabled patients judge whether a clinic fits their needs. Write 1-2 plain-language sentences " +
         "(under 50 words), warm but factual. Mention accessibility fit first, then insurance, then timing. " +
-        "Use only the facts given; never invent details. No markdown, no greeting.",
+        "Use only the facts given; never invent details. No markdown, no greeting. " +
+        languageRule(d),
       user: [
         `Clinic: ${i.clinic.name} (${i.clinic.specialty})`,
         `Accessibility needs met: ${met.join("; ") || "none requested"}`,
@@ -190,34 +267,23 @@ export function generateMatchExplanation(i: ExplanationInput): Promise<Generated
         `Online booking available: ${i.clinic.hasOnlineBooking ? "yes" : "no, must call"}`,
       ].join("\n"),
     },
-    () => templateExplanation(i),
+    () => templateExplanation(i, d),
   );
 }
 
-export function templateScript(clinic: Clinic, intake: IntakeData): string {
-  const needs = listNeeds(intake.accessibilityRequirements);
-  const needLines = needs.length
-    ? needs.map((n) => `  • Can you confirm you have: ${n.toLowerCase()}?`).join("\n")
-    : "  • I don't have specific accessibility requests, but I'd like to know what accommodations you offer.";
-  return `Hi, my name is ${intake.patientName}. I'm calling to schedule a new-patient ${intake.specialty.toLowerCase()} appointment.
-
-The reason for my visit: ${intake.reasonForVisit}
-
-My insurance is ${intake.insurancePayer}, member ID ${intake.memberId}. Could you confirm you're in-network with that plan?
-
-I have a disability, and I want to make sure the visit will be accessible before I book. Before we pick a time:
-${needLines}
-
-If any of these aren't available, could you tell me what you can arrange instead, or note the request in my chart so it's ready when I arrive?
-
-I'm hoping to be seen within the next ${intake.urgencyWindowDays} days. What's the earliest appointment you have?
-
-Before we hang up, could you please repeat back the date, time, and the accommodations you've noted, and give me a confirmation number?
-
-Thank you so much for your help.`;
+export function templateScript(clinic: Clinic, intake: IntakeData, d: Dict = getDict("en")): string {
+  return d.tpl.script({
+    name: intake.patientName,
+    specialty: d.specialties[intake.specialty as Specialty] ?? intake.specialty,
+    reason: intake.reasonForVisit,
+    insurance: intake.insurancePayer,
+    memberId: intake.memberId,
+    needs: listNeeds(intake.accessibilityRequirements, d.access.labels),
+    days: intake.urgencyWindowDays,
+  });
 }
 
-export function generateAdvocacyScript(clinic: Clinic, intake: IntakeData): Promise<GeneratedText> {
+export function generateAdvocacyScript(clinic: Clinic, intake: IntakeData, d: Dict = getDict("en")): Promise<GeneratedText> {
   const needs = listNeeds(intake.accessibilityRequirements);
   return generate(
     {
@@ -228,7 +294,8 @@ export function generateAdvocacyScript(clinic: Clinic, intake: IntakeData): Prom
         "Structure: greeting with name and purpose; reason for visit; insurance check; each accessibility need as its own clear yes/no question, " +
         "with a follow-up asking what they can arrange if the answer is no; ask for the earliest slot within the time window; " +
         "ask them to repeat back the booking and noted accommodations and give a confirmation number; thank them. " +
-        "Plain text only: no markdown, no headings, no stage directions. Use short paragraphs and '  • ' bullets for the accessibility questions. Under 250 words.",
+        "Plain text only: no markdown, no headings, no stage directions. Use short paragraphs and '  • ' bullets for the accessibility questions. Under 250 words. " +
+        languageRule(d),
       user: [
         `Patient name: ${intake.patientName}`,
         `Clinic: ${clinic.name}, phone ${clinic.phone}`,
@@ -239,6 +306,6 @@ export function generateAdvocacyScript(clinic: Clinic, intake: IntakeData): Prom
         `Wants to be seen within: ${intake.urgencyWindowDays} days`,
       ].join("\n"),
     },
-    () => templateScript(clinic, intake),
+    () => templateScript(clinic, intake, d),
   );
 }

@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Clinic, IntakeData } from "@/lib/types";
-import { ACCESSIBILITY_KEYS, ACCESSIBILITY_LABELS } from "@/lib/types";
-import type { CalEvent } from "@/lib/ics";
-import { formatSlot } from "@/lib/session";
+import type { Clinic, IntakeData, Specialty } from "@/lib/types";
+import { ACCESSIBILITY_KEYS } from "@/lib/types";
+import { APPOINTMENT_MIN, appointmentEvent, confirmationNumber } from "@/lib/booking";
 import Dialog from "./Dialog";
 import CalendarActions from "./CalendarActions";
 import { useCalendar } from "./CalendarProvider";
+import { useI18n } from "./I18nProvider";
 import { Alert } from "./Icons";
 
 interface Props {
@@ -17,37 +17,10 @@ interface Props {
   onClose: () => void;
 }
 
-const APPOINTMENT_MIN = 60;
-
-function confirmationNumber(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no look-alikes (0/O, 1/I)
-  let out = "";
-  for (let i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
-  return `CONF-${out}`;
-}
-
-function appointmentEvent(clinic: Clinic, intake: IntakeData, slot: string, conf: string): CalEvent {
-  const start = new Date(slot);
-  const needs = ACCESSIBILITY_KEYS.filter((k) => intake.accessibilityRequirements[k]).map((k) => ACCESSIBILITY_LABELS[k]);
-  return {
-    title: `${intake.specialty} appointment at ${clinic.name}`,
-    description: [
-      `Confirmation: ${conf} (demo booking)`,
-      `Clinic phone: ${clinic.phone}`,
-      `Reason: ${intake.reasonForVisit}`,
-      needs.length ? `Accommodations requested: ${needs.join("; ")}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n"),
-    location: clinic.address,
-    start,
-    end: new Date(start.getTime() + APPOINTMENT_MIN * 60_000),
-    alarmMinutes: 60,
-  };
-}
-
 export default function BookingModal({ clinic, intake, open, onClose }: Props) {
   const { getBusy, connection } = useCalendar();
+  const { t, formatSlot } = useI18n();
+  const bk = t.booking;
   const [slot, setSlot] = useState<string>("");
   const [confirmed, setConfirmed] = useState<{ number: string; slot: string } | null>(null);
   const [clashes, setClashes] = useState<Set<string> | null>(null);
@@ -93,8 +66,8 @@ export default function BookingModal({ clinic, intake, open, onClose }: Props) {
     <Dialog
       open={open}
       onClose={onClose}
-      title={confirmed ? "You’re booked" : `Book at ${clinic.name}`}
-      subtitle={confirmed ? undefined : "Pick an opening. We’ll pass your accessibility needs along with the booking."}
+      title={confirmed ? bk.booked : bk.title(clinic.name)}
+      subtitle={confirmed ? undefined : bk.subtitle}
     >
       {confirmed ? (
         <div className="success" role="status">
@@ -108,21 +81,31 @@ export default function BookingModal({ clinic, intake, open, onClose }: Props) {
             <br />
             <span className="muted">{clinic.name}</span>
           </p>
-          <p className="conf" aria-label={`Confirmation number ${confirmed.number.split("").join(" ")}`}>
+          <p className="conf" aria-label={bk.confAria(confirmed.number)}>
             {confirmed.number}
           </p>
           <p className="muted" style={{ fontSize: "0.875rem", margin: "6px 0 18px" }}>
-            Demo booking — no real appointment was made.
+            {bk.demoDone}
           </p>
           <CalendarActions
-            event={appointmentEvent(clinic, intake, confirmed.slot, confirmed.number)}
+            event={appointmentEvent(
+              {
+                clinic,
+                slot: confirmed.slot,
+                confirmation: confirmed.number,
+                specialtyLabel: t.specialties[intake.specialty as Specialty] ?? intake.specialty,
+                reason: intake.reasonForVisit,
+                needLabels: ACCESSIBILITY_KEYS.filter((k) => intake.accessibilityRequirements[k]).map((k) => t.access.labels[k]),
+              },
+              t.events,
+            )}
             filename={`appointment-${clinic.id}.ics`}
             noun="appointment"
             align="center"
           />
           <div className="dialog__footer">
             <button type="button" className="btn btn--primary" onClick={onClose}>
-              Done
+              {bk.done}
             </button>
           </div>
         </div>
@@ -135,10 +118,10 @@ export default function BookingModal({ clinic, intake, open, onClose }: Props) {
         >
           <p className="demo-note">
             <Alert size={16} />
-            <span>Demo booking — no real appointment is made and no clinic is contacted.</span>
+            <span>{bk.demoNote}</span>
           </p>
           <fieldset style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-            <legend className="visually-hidden">Available appointments</legend>
+            <legend className="visually-hidden">{bk.available}</legend>
             <div className="choices">
               {upcoming.map((s) => {
                 const inWindow = Date.parse(s) <= windowEnd;
@@ -152,11 +135,11 @@ export default function BookingModal({ clinic, intake, open, onClose }: Props) {
                     <span className="choice__text">
                       <span className="choice__title">{formatSlot(s)}</span>
                       <span className="choice__desc">
-                        {inWindow ? `Within your ${urgencyWindowDays}-day window` : `Later than your ${urgencyWindowDays}-day window`}
+                        {inWindow ? bk.within(urgencyWindowDays) : bk.later(urgencyWindowDays)}
                       </span>
                       {clash !== undefined && (
                         <span className={`choice__desc${clash ? " choice__desc--warn" : ""}`}>
-                          {clash ? "Clashes with something on your calendar" : "You’re free then"}
+                          {clash ? bk.clash : bk.free}
                         </span>
                       )}
                     </span>
@@ -166,14 +149,14 @@ export default function BookingModal({ clinic, intake, open, onClose }: Props) {
             </div>
           </fieldset>
           {checking && (
-            <p className="inline-note">Checking your Google Calendar for clashes…</p>
+            <p className="inline-note">{bk.checking}</p>
           )}
           <div className="dialog__footer">
             <button type="submit" className="btn btn--primary" disabled={!slot} aria-disabled={!slot}>
-              Confirm booking
+              {bk.confirm}
             </button>
             <button type="button" className="btn btn--secondary" onClick={onClose}>
-              Cancel
+              {bk.cancel}
             </button>
           </div>
         </form>

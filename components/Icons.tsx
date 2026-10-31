@@ -180,3 +180,47 @@ export function Compass({ size = 18 }: P) {
     </svg>
   );
 }
+
+export function Chat({ size = 18 }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...base(size)}>
+      <path d="M4.5 5.5h15v10h-8l-4.5 3.5v-3.5h-2.5z" />
+      <path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" strokeWidth={2.4} />
+    </svg>
+  );
+}
+
+export function Globe({ size = 18 }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...base(size)}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h17M12 3.5c2.4 2.3 3.6 5.1 3.6 8.5s-1.2 6.2-3.6 8.5c-2.4-2.3-3.6-5.1-3.6-8.5s1.2-6.2 3.6-8.5Z" />
+    </svg>
+  );
+}
+
+export function Paperclip({ size = 18 }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...base(size)}>
+      <path d="m19 11.5-6.8 6.8a4.5 4.5 0 0 1-6.4-6.4l7.4-7.4a3 3 0 0 1 4.2 4.2l-7.3 7.3a1.5 1.5 0 0 1-2.1-2.1l6.6-6.6" />
+    </svg>
+  );
+}
+
+export function Send({ size = 18 }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...base(size)}>
+      <path d="M4.5 12 19.5 4.5l-4 15-3.5-6.5z" />
+      <path d="m12 13 7.5-8.5" />
+    </svg>
+  );
+}
+
+export function FileDoc({ size = 16 }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...base(size)}>
+      <path d="M6.5 3.5h7l4 4v13h-11z" />
+      <path d="M13.5 3.5v4h4M9 13h6M9 16.5h6" />
+    </svg>
+  );
+}

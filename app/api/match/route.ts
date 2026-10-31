@@ -4,8 +4,12 @@ import { scoreClinics } from "@/lib/matching";
 import { generateMatchExplanation, templateExplanation } from "@/lib/ai-client";
 import { validateIntake } from "@/lib/validate";
 import type { MatchResult } from "@/lib/types";
+import { getDict } from "@/lib/i18n";
 
 const AI_EXPLAINED_COUNT = 5;
+
+// AI calls can take a while; Vercel's default function limit is shorter.
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -17,6 +21,7 @@ export async function POST(req: Request) {
 
   const { data: intake, errors } = validateIntake(body);
   if (!intake) return NextResponse.json({ errors }, { status: 400 });
+  const d = getDict((body as { lang?: unknown }).lang);
 
   const scored = scoreClinics(intake, getClinics());
 
@@ -30,7 +35,7 @@ export async function POST(req: Request) {
         inNetwork: s.inNetwork,
         slotsInWindow: s.slotsInWindow,
         urgencyWindowDays: intake.urgencyWindowDays,
-      }),
+      }, d),
     ),
   );
 
@@ -45,7 +50,7 @@ export async function POST(req: Request) {
         inNetwork: s.inNetwork,
         slotsInWindow: s.slotsInWindow,
         urgencyWindowDays: intake.urgencyWindowDays,
-      }),
+      }, d),
       explanationSource: "template",
     };
   });

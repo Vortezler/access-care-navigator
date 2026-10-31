@@ -1,5 +1,7 @@
 // Minimal RFC 5545 calendar file. Hand-rolled: the format is tiny and well defined.
 
+import en, { type Dict } from "./i18n/en";
+
 export interface CalEvent {
   title: string;
   description: string;
@@ -55,11 +57,16 @@ export function buildEventIcs(ev: CalEvent): string {
 }
 
 /** The call reminder used by the Advocacy Script flow. */
-export function callReminderEvent(clinicName: string, phone: string, reminderDateIso: string): CalEvent {
+export function callReminderEvent(
+  clinicName: string,
+  phone: string,
+  reminderDateIso: string,
+  text: Dict["events"] = en.events,
+): CalEvent {
   const start = new Date(reminderDateIso);
   return {
-    title: `Call ${clinicName} to book`,
-    description: `Call ${clinicName} at ${phone}. Have your advocacy script and insurance card ready.`,
+    title: text.callTitle(clinicName),
+    description: text.callDesc(clinicName, phone),
     start,
     end: new Date(start.getTime() + 15 * 60_000),
   };

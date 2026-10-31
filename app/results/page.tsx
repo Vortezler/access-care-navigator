@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { Clinic } from "@/lib/types";
+import type { Clinic, Specialty } from "@/lib/types";
 import { ACCESSIBILITY_KEYS } from "@/lib/types";
 import { loadSession, type StoredSession } from "@/lib/session";
 import ClinicCard from "@/components/ClinicCard";
+import { useT } from "@/components/I18nProvider";
 import BookingModal from "@/components/BookingModal";
 import AdvocacyScriptModal from "@/components/AdvocacyScriptModal";
 import { ArrowLeft, MoonMark } from "@/components/Icons";
 
 export default function ResultsPage() {
+  const t = useT();
+  const r = t.results;
   const [session, setSession] = useState<StoredSession | null | undefined>(undefined);
   // Keep the clinic separate from `open` so content stays put during the exit animation.
   const [bookClinic, setBookClinic] = useState<Clinic | null>(null);
@@ -32,13 +35,13 @@ export default function ResultsPage() {
             <MoonMark size={36} className="brand__mark" />
           </span>
           <h1 className="display" style={{ fontSize: "2rem", marginTop: 14 }}>
-            Nothing here yet
+            {r.emptyTitle}
           </h1>
           <p className="lede" style={{ margin: "10px auto 0" }}>
-            Your results live only in this browser tab. Start a search to see matched clinics.
+            {r.emptyBody}
           </p>
           <Link href="/" className="btn btn--primary">
-            Start a search
+            {r.start}
           </Link>
         </div>
       </div>
@@ -46,6 +49,7 @@ export default function ResultsPage() {
   }
 
   const { intake, results } = session;
+  const sp = t.specialties[intake.specialty as Specialty] ?? intake.specialty;
   const needCount = ACCESSIBILITY_KEYS.filter((k) => intake.accessibilityRequirements[k]).length;
 
   return (
@@ -54,35 +58,35 @@ export default function ResultsPage() {
         <div>
           <p className="eyebrow reveal">
             <MoonMark size={16} />
-            {results.length} {results.length === 1 ? "clinic" : "clinics"} checked
+            {r.checked(results.length)}
           </p>
           <h1 className="display reveal" style={{ ["--i" as string]: 1 }}>
-            Your {intake.specialty} matches
+            {r.title(sp)}
           </h1>
           <div className="badges summary reveal" style={{ ["--i" as string]: 1 }}>
-            <span className="badge">Insurance: {intake.insurancePayer}</span>
+            <span className="badge">{r.insurance(intake.insurancePayer)}</span>
             <span className="badge">
-              {needCount} accessibility {needCount === 1 ? "need" : "needs"}
+              {r.needs(needCount)}
             </span>
-            <span className="badge">Within {intake.urgencyWindowDays} days</span>
+            <span className="badge">{r.within(intake.urgencyWindowDays)}</span>
           </div>
         </div>
         <Link href="/?edit=1" className="btn btn--secondary reveal" style={{ ["--i" as string]: 2 }}>
           <ArrowLeft />
-          Edit search
+          {r.edit}
         </Link>
       </div>
 
       {results.length === 0 ? (
         <div className="panel empty reveal">
-          <h2>No {intake.specialty} clinics in our demo dataset</h2>
-          <p className="muted">Try another specialty.</p>
+          <h2>{r.noneTitle(sp)}</h2>
+          <p className="muted">{r.noneBody}</p>
           <Link href="/?edit=1" className="btn btn--primary">
-            Edit search
+            {r.edit}
           </Link>
         </div>
       ) : (
-        <ol className="results-list" aria-label="Matched clinics, best first">
+        <ol className="results-list" aria-label={r.listLabel}>
           {results.map((r, i) => (
             <ClinicCard
               key={r.clinic.id}

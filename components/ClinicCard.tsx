@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { IntakeData, MatchResult, TextSource } from "@/lib/types";
-import { ACCESSIBILITY_KEYS, ACCESSIBILITY_LABELS } from "@/lib/types";
+import type { IntakeData, MatchResult } from "@/lib/types";
+import { ACCESSIBILITY_KEYS } from "@/lib/types";
+import { useT } from "./I18nProvider";
 import { Calendar, Check, Cross, Phone, Sparkle } from "./Icons";
 
 interface Props {
@@ -16,14 +17,9 @@ interface Props {
 const R = 34;
 const CIRC = 2 * Math.PI * R;
 
-const SOURCE_LABEL: Record<TextSource, string> = {
-  bedrock: "AI summary · Claude on AWS Bedrock",
-  anthropic: "AI summary · Claude",
-  template: "Summary",
-};
-
 function ScoreRing({ score, delay }: { score: number; delay: number }) {
   // Starts empty, then fills to the score once mounted — the ring "settles" into place.
+  const t = useT();
   const [offset, setOffset] = useState(CIRC);
   useEffect(() => {
     const id = requestAnimationFrame(() => setOffset(CIRC * (1 - score / 100)));
@@ -31,7 +27,7 @@ function ScoreRing({ score, delay }: { score: number; delay: number }) {
   }, [score]);
 
   return (
-    <div className="score" role="img" aria-label={`Match score ${score} out of 100`}>
+    <div className="score" role="img" aria-label={t.card.scoreAria(score)}>
       <svg viewBox="0 0 80 80" aria-hidden>
         <circle className="score__track" cx="40" cy="40" r={R} fill="none" strokeWidth="6" />
         <circle
@@ -49,7 +45,7 @@ function ScoreRing({ score, delay }: { score: number; delay: number }) {
       <div className="score__label" aria-hidden>
         <div>
           <span className="score__num">{score}</span>
-          <span className="score__unit">match</span>
+          <span className="score__unit">{t.card.match}</span>
         </div>
       </div>
     </div>
@@ -58,6 +54,8 @@ function ScoreRing({ score, delay }: { score: number; delay: number }) {
 
 export default function ClinicCard({ result, index, intake, onBook, onScript }: Props) {
   const { clinic } = result;
+  const t = useT();
+  const c = t.card;
   const requested = ACCESSIBILITY_KEYS.filter((k) => intake.accessibilityRequirements[k]);
   const extras = ACCESSIBILITY_KEYS.filter((k) => !intake.accessibilityRequirements[k] && clinic.accessibility[k]);
   const prefersBooking = intake.autonomyMode === "auto_book_preferred";
@@ -72,7 +70,7 @@ export default function ClinicCard({ result, index, intake, onBook, onScript }: 
   const scriptBtn = (primary: boolean) => (
     <button type="button" className={`btn ${primary ? "btn--primary" : "btn--secondary"}`} onClick={onScript} aria-describedby={headingId}>
       <Phone />
-      Get call script
+      {c.script}
     </button>
   );
 
@@ -85,7 +83,7 @@ export default function ClinicCard({ result, index, intake, onBook, onScript }: 
         aria-labelledby={headingId}
       >
         <div className="clinic__head">
-          <p className="clinic__rank">{index === 0 ? "Best match" : `#${index + 1}`}</p>
+          <p className="clinic__rank">{index === 0 ? c.best : c.rank(index + 1)}</p>
           <h2 className="clinic__name" id={headingId}>
             {clinic.name}
           </h2>
@@ -97,22 +95,22 @@ export default function ClinicCard({ result, index, intake, onBook, onScript }: 
           <div className="badges">
             {result.inNetwork ? (
               <span className="badge badge--ok">
-                <Check size={12} /> In-network
+                <Check size={12} /> {c.inNetwork}
               </span>
             ) : (
               <span className="badge badge--warn">
-                <Cross size={10} /> Out-of-network — verify
+                <Cross size={10} /> {c.outNetwork}
               </span>
             )}
             {clinic.hasOnlineBooking ? (
-              <span className="badge badge--accent">Online booking</span>
+              <span className="badge badge--accent">{c.online}</span>
             ) : (
-              <span className="badge">Phone booking only</span>
+              <span className="badge">{c.phoneOnly}</span>
             )}
             <span className={`badge${result.slotsInWindow ? "" : " badge--warn"}`}>
               {result.slotsInWindow
-                ? `${result.slotsInWindow} opening${result.slotsInWindow === 1 ? "" : "s"} in ${intake.urgencyWindowDays} days`
-                : `No openings in ${intake.urgencyWindowDays} days`}
+                ? c.openings(result.slotsInWindow, intake.urgencyWindowDays)
+                : c.noOpenings(intake.urgencyWindowDays)}
             </span>
           </div>
         </div>
@@ -120,13 +118,13 @@ export default function ClinicCard({ result, index, intake, onBook, onScript }: 
         <ScoreRing score={result.score} delay={160 + index * 90} />
 
         <div className="clinic__body">
-          <section aria-label="Accessibility check">
+          <section aria-label={c.accessCheck}>
             <h3 className="clinic__subhead">
-              Your needs · {result.requirementsMetCount} of {result.requirementsTotalCount} met
+              {c.needsMet(result.requirementsMetCount, result.requirementsTotalCount)}
             </h3>
             {requested.length === 0 ? (
               <p className="muted" style={{ margin: 0, fontSize: "0.9375rem" }}>
-                You didn&rsquo;t select specific needs.
+                {c.noNeeds}
               </p>
             ) : (
               <ul className="checklist">
@@ -139,9 +137,9 @@ export default function ClinicCard({ result, index, intake, onBook, onScript }: 
                       </span>
                       <span>
                         <span className={`checklist__state checklist__state--${met ? "met" : "unmet"}`}>
-                          {met ? "Yes" : "No"}
+                          {met ? c.yes : c.no}
                         </span>
-                        <span className="visually-hidden">:</span> {ACCESSIBILITY_LABELS[k]}
+                        <span className="visually-hidden">:</span> {t.access.labels[k]}
                       </span>
                     </li>
                   );
@@ -150,17 +148,17 @@ export default function ClinicCard({ result, index, intake, onBook, onScript }: 
             )}
             {extras.length > 0 && (
               <p className="muted" style={{ margin: "12px 0 0", fontSize: "0.875rem" }}>
-                Also offers: {extras.map((k) => ACCESSIBILITY_LABELS[k].toLowerCase()).join(", ")}.
+                {c.alsoOffers(extras.map((k) => t.access.labels[k]).join(", "))}
               </p>
             )}
           </section>
 
-          <section aria-label="Why this clinic">
-            <h3 className="clinic__subhead">Why this clinic</h3>
+          <section aria-label={c.why}>
+            <h3 className="clinic__subhead">{c.why}</h3>
             <p className="clinic__explanation">{result.explanation}</p>
             <p className="source-tag">
               {result.explanationSource !== "template" && <Sparkle />}
-              {SOURCE_LABEL[result.explanationSource]}
+              {c.source[result.explanationSource]}
             </p>
           </section>
         </div>
@@ -169,13 +167,13 @@ export default function ClinicCard({ result, index, intake, onBook, onScript }: 
           {clinic.hasOnlineBooking ? (
             prefersBooking ? (
               <>
-                {bookBtn(true, "Book a slot")}
+                {bookBtn(true, c.book)}
                 {scriptBtn(false)}
               </>
             ) : (
               <>
                 {scriptBtn(true)}
-                {bookBtn(false, "Book online instead")}
+                {bookBtn(false, c.bookInstead)}
               </>
             )
           ) : (

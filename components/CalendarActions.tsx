@@ -5,13 +5,14 @@ import type { CalEvent } from "@/lib/ics";
 import { downloadIcs } from "@/lib/ics";
 import { googleTemplateUrl } from "@/lib/google-calendar";
 import { useCalendar } from "./CalendarProvider";
+import { useT } from "./I18nProvider";
 import { Calendar, Check, ExternalLink } from "./Icons";
 
 interface Props {
   event: CalEvent;
   filename: string;
-  /** e.g. "appointment" or "reminder" — used in button text */
-  noun: string;
+  /** What's being added — used in button text */
+  noun: "appointment" | "reminder" | "event";
   primary?: boolean;
   align?: "start" | "center";
 }
@@ -24,11 +25,12 @@ interface Props {
  */
 export default function CalendarActions({ event, filename, noun, primary = false, align = "start" }: Props) {
   const { configured, connection, addEvent } = useCalendar();
+  const t = useT();
+  const c = t.cal;
+  const word = c.nouns[noun];
   const [state, setState] = useState<{ kind: "idle" | "adding" } | { kind: "added"; link: string } | { kind: "error"; msg: string }>({
     kind: "idle",
   });
-
-  const canOneClick = configured;
 
   async function add() {
     setState({ kind: "adding" });
@@ -48,37 +50,33 @@ export default function CalendarActions({ event, filename, noun, primary = false
         {state.kind === "added" ? (
           <a className="btn btn--secondary" href={state.link} target="_blank" rel="noopener noreferrer">
             <Check size={14} />
-            Added. Open in Google Calendar
+            {c.added}
             <ExternalLink />
-            <span className="visually-hidden">(opens in a new tab)</span>
+            <span className="visually-hidden">{t.common.newTab}</span>
           </a>
-        ) : canOneClick ? (
+        ) : configured ? (
           <button type="button" className={btnClass} onClick={add} disabled={state.kind === "adding"}>
             <Calendar />
-            {state.kind === "adding"
-              ? "Adding…"
-              : connection
-                ? `Add ${noun} to Google Calendar`
-                : `Connect Google & add ${noun}`}
+            {state.kind === "adding" ? c.adding : connection ? c.add(word) : c.connectAdd(word)}
           </button>
         ) : (
           <a className={btnClass} href={googleTemplateUrl(event)} target="_blank" rel="noopener noreferrer">
             <Calendar />
-            Add {noun} to Google Calendar
+            {c.add(word)}
             <ExternalLink />
-            <span className="visually-hidden">(opens Google Calendar in a new tab)</span>
+            <span className="visually-hidden">{t.common.newTab}</span>
           </a>
         )}
         <button type="button" className="btn btn--secondary" onClick={() => downloadIcs(event, filename)}>
-          Download .ics
+          {c.download}
         </button>
       </div>
       <p className="visually-hidden" role="status" aria-live="polite">
-        {state.kind === "added" ? `The ${noun} was added to your Google Calendar.` : ""}
+        {state.kind === "added" ? c.addedStatus(word) : ""}
       </p>
       {state.kind === "error" && (
         <p className="field__error" role="alert" style={{ marginTop: 10 }}>
-          Couldn&rsquo;t add to Google Calendar: {state.msg}
+          {c.error(state.msg)}
         </p>
       )}
     </div>

@@ -1,4 +1,5 @@
-import { generateStructured } from "./ai-client";
+import { generateStructured, languageRule } from "./ai-client";
+import { getDict, type Dict } from "./i18n";
 import type { SpecialtySuggestion, TextSource } from "./types";
 import { SPECIALTIES } from "./types";
 
@@ -67,8 +68,22 @@ Writing:
 Reply with only a JSON object with keys: specialty, confidence, reasoning, alternatives (array of {specialty, reason}), urgency, urgencyNote.`;
 
 // Only used when no AI is available, as a safety net for the most serious signs.
-const RED_FLAGS =
-  /chest (pain|pressure|tightness)|can'?t breathe|(trouble|difficulty) breathing|face (is )?droop|slurred speech|sudden (weakness|numbness|confusion|severe headache)|worst headache|suicid|kill myself|end my life|overdose|seizure|unconscious|severe bleeding|coughing (up )?blood/i;
+const RED_FLAGS = new RegExp(
+  [
+    // English
+    "chest (pain|pressure|tightness)|can'?t breathe|(trouble|difficulty) breathing|face (is )?droop|slurred speech",
+    "sudden (weakness|numbness|confusion|severe headache)|worst headache|suicid|kill myself|end my life|overdose",
+    "seizure|unconscious|severe bleeding|coughing (up )?blood",
+    // Spanish / French
+    "dolor (de|en el) pecho|no puedo respirar|me cuesta respirar|convulsi|desmay|sangrado (fuerte|abundante)",
+    "douleur (thoracique|à la poitrine|dans la poitrine)|je ne peux (pas|plus) respirer|convulsion|perte de connaissance",
+    // Chinese / Vietnamese / Hindi
+    "胸痛|胸口痛|胸闷|呼吸困难|喘不过气|自杀|中风|抽搐|昏迷|大出血",
+    "đau ngực|tức ngực|khó thở|không thở được|tự tử|đột quỵ|co giật|bất tỉnh",
+    "सीने में दर्द|छाती में दर्द|सांस (नहीं|लेने में)|साँस (नहीं|लेने में)|आत्महत्या|दौरा|बेहोश",
+  ].join("|"),
+  "i",
+);
 
 function isSpecialty(x: unknown): x is SpecialtySuggestion["specialty"] {
   return typeof x === "string" && (SPECIALTIES as readonly string[]).includes(x);
@@ -95,25 +110,28 @@ export function parseSuggestion(raw: unknown): SpecialtySuggestion | null {
   };
 }
 
-function fallback(symptoms: string): SpecialtySuggestion {
+function fallback(symptoms: string, d: Dict): SpecialtySuggestion {
   const emergency = RED_FLAGS.test(symptoms);
   return {
     specialty: "Primary Care",
     confidence: "low",
-    reasoning:
-      "Our AI helper isn't available right now, so we can't read your description closely enough to point you to a specialist. A general physician is the right first stop: they can assess everything together and refer you on if needed.",
+    reasoning: d.tpl.triageReasoning,
     alternatives: [],
     urgency: emergency ? "emergency" : "routine",
-    urgencyNote: emergency
-      ? "Some of what you wrote can be a sign of an emergency. Call 911 or go to the nearest emergency room now."
-      : "",
+    urgencyNote: emergency ? d.tpl.triageEmergency : "",
   };
 }
 
-export function suggestSpecialty(symptoms: string): Promise<{ value: SpecialtySuggestion; source: TextSource }> {
+export function suggestSpecialty(
+  symptoms: string,
+  d: Dict = getDict("en"),
+): Promise<{ value: SpecialtySuggestion; source: TextSource }> {
   return generateStructured(
-    { system: SYSTEM, user: `What the person wrote:\n"""${symptoms}"""`, maxTokens: 4000, effort: "medium", schema: SCHEMA },
+    {
+      // The specialty value stays in English (it's an id); the prose follows the user's language.
+      system: `${SYSTEM}\n\n${languageRule(d)} The "specialty" fields must still use the exact English names from the list.`,
+      user: `What the person wrote:\n"""${symptoms}"""`, maxTokens: 4000, effort: "medium", schema: SCHEMA },
     parseSuggestion,
-    () => fallback(symptoms),
+    () => fallback(symptoms, d),
   );
 }

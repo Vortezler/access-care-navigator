@@ -2,9 +2,13 @@ import { NextResponse } from "next/server";
 import { getClinicById } from "@/lib/clinics";
 import { generateAdvocacyScript } from "@/lib/ai-client";
 import { validateIntake } from "@/lib/validate";
+import { getDict } from "@/lib/i18n";
+
+// AI calls can take a while; Vercel's default function limit is shorter.
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  let body: { clinicId?: unknown; intakeData?: unknown };
+  let body: { clinicId?: unknown; intakeData?: unknown; lang?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -17,6 +21,6 @@ export async function POST(req: Request) {
   const { data: intake, errors } = validateIntake(body.intakeData);
   if (!intake) return NextResponse.json({ errors }, { status: 400 });
 
-  const { text, source } = await generateAdvocacyScript(clinic, intake);
+  const { text, source } = await generateAdvocacyScript(clinic, intake, getDict(body.lang));
   return NextResponse.json({ script: text, source });
 }

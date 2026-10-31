@@ -4,6 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { usePathname } from "next/navigation";
 import type { Prefs } from "@/lib/prefs";
 import { DEFAULT_PREFS, applyPrefs, loadPrefs, savePrefs } from "@/lib/prefs";
+import type { Dict } from "@/lib/i18n";
+import { useI18n } from "./I18nProvider";
 
 export type ReadState = "idle" | "playing" | "paused";
 
@@ -22,7 +24,7 @@ interface A11yContextValue {
   readState: ReadState;
   readLabel: string;
   readPage: () => void;
-  readText: (text: string, label: string) => void;
+  readText: (text: string, label: string, onDone?: () => void) => void;
   pause: () => void;
   resume: () => void;
   stop: () => void;
@@ -39,7 +41,7 @@ export function useA11y() {
 // Blocks we read one at a time, so each can be highlighted as it is spoken.
 const BLOCKS = "h1,h2,h3,h4,p,li,legend,label,dt,dd,textarea,.badge";
 
-function collectChunks(root: Element): Chunk[] {
+function collectChunks(root: Element, r: Dict["reader"]): Chunk[] {
   const out: Chunk[] = [];
   root.querySelectorAll(BLOCKS).forEach((el) => {
     if (el.closest('[aria-hidden="true"],[data-noread],.read-bar')) return;
@@ -50,17 +52,28 @@ function collectChunks(root: Element): Chunk[] {
     else text = (el as HTMLElement).innerText ?? el.textContent ?? "";
     // Say the state of checkboxes and radios, like a screen reader would
     const input = el.querySelector<HTMLInputElement>('input[type="checkbox"],input[type="radio"]');
-    if (input) text = `${input.checked ? "Selected" : "Not selected"}: ${text}`;
+    if (input) text = `${input.checked ? r.selected : r.notSelected}: ${text}`;
     // ...and what's typed into a text field
     if (el instanceof HTMLLabelElement && el.htmlFor) {
       const ctl = document.getElementById(el.htmlFor);
-      if (ctl instanceof HTMLSelectElement) text += `: ${ctl.value ? ctl.selectedOptions[0]?.text : "nothing chosen"}`;
-      else if (ctl instanceof HTMLInputElement || ctl instanceof HTMLTextAreaElement) text += `: ${ctl.value || "empty"}`;
+      if (ctl instanceof HTMLSelectElement) text += `: ${ctl.value ? ctl.selectedOptions[0]?.text : r.nothing}`;
+      else if (ctl instanceof HTMLInputElement || ctl instanceof HTMLTextAreaElement) text += `: ${ctl.value || r.empty}`;
     }
     text = text.replace(/\s+/g, " ").trim();
     if (text) out.push({ text, el });
   });
   return out;
+}
+
+const sameLanguage = (a: string, b: string) => a.toLowerCase().split(/[-_]/)[0] === b.toLowerCase().split(/[-_]/)[0];
+
+/** The saved voice if it speaks this language; otherwise the best match for the language. */
+function pickVoice(all: SpeechSynthesisVoice[], locale: string, savedURI: string): SpeechSynthesisVoice | undefined {
+  const saved = all.find((v) => v.voiceURI === savedURI);
+  if (saved && sameLanguage(saved.lang, locale)) return saved;
+  const exact = all.filter((v) => v.lang.replace("_", "-").toLowerCase() === locale.toLowerCase());
+  const same = all.filter((v) => sameLanguage(v.lang, locale));
+  return exact.find((v) => v.localService) ?? exact[0] ?? same.find((v) => v.localService) ?? same[0];
 }
 
 export default function A11yProvider({ children }: { children: React.ReactNode }) {
@@ -74,6 +87,9 @@ export default function A11yProvider({ children }: { children: React.ReactNode }
   const prefsRef = useRef(prefs);
   prefsRef.current = prefs;
   const pathname = usePathname();
+  const { t, speech } = useI18n();
+  const speechRef = useRef(speech);
+  speechRef.current = speech;
 
   useEffect(() => {
     const p = loadPrefs();
@@ -81,7 +97,7 @@ export default function A11yProvider({ children }: { children: React.ReactNode }
     applyPrefs(p);
     if (!("speechSynthesis" in window)) return;
     setSpeechSupported(true);
-    const load = () => setVoices(window.speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith("en")));
+    const load = () => setVoices(window.speechSynthesis.getVoices());
     load();
     window.speechSynthesis.addEventListener("voiceschanged", load);
     const stopOnLeave = () => window.speechSynthesis.cancel();
@@ -122,14 +138,14 @@ export default function A11yProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const speak = useCallback(
-    (chunks: Chunk[], label: string) => {
+    (chunks: Chunk[], label: string, onDone?: () => void) => {
       const synth = window.speechSynthesis;
       synth.cancel();
       clearHighlight();
       if (!chunks.length) return;
       const id = ++runId.current;
       const { speechRate, voiceURI } = prefsRef.current;
-      const voice = synth.getVoices().find((v) => v.voiceURI === voiceURI);
+      const voice = pickVoice(synth.getVoices(), speechRef.current, voiceURI);
       const reduced =
         document.documentElement.dataset.motion === "reduce" || matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -137,7 +153,7 @@ export default function A11yProvider({ children }: { children: React.ReactNode }
         const u = new SpeechSynthesisUtterance(c.text);
         u.rate = speechRate;
         if (voice) u.voice = voice;
-        u.lang = voice?.lang || document.documentElement.lang || "en-US";
+        u.lang = voice?.lang || speechRef.current;
         u.onstart = () => {
           if (id !== runId.current) return;
           clearHighlight();
@@ -152,6 +168,7 @@ export default function A11yProvider({ children }: { children: React.ReactNode }
           clearHighlight();
           setReadState("idle");
           setReadLabel("");
+          onDone?.();
         };
         if (i === chunks.length - 1) u.onend = done;
         u.onerror = (e) => {
@@ -172,17 +189,17 @@ export default function A11yProvider({ children }: { children: React.ReactNode }
   const readPage = useCallback(() => {
     // If a dialog is open, that's what the person is looking at.
     const root = document.querySelector("dialog[open]") ?? document.getElementById("main");
-    if (root) speak(collectChunks(root), root.tagName === "DIALOG" ? "Reading this dialog" : "Reading this page");
-  }, [speak]);
+    if (root) speak(collectChunks(root, t.reader), root.tagName === "DIALOG" ? t.reader.dialog : t.reader.page);
+  }, [speak, t]);
 
   const readText = useCallback(
-    (text: string, label: string) => {
+    (text: string, label: string, onDone?: () => void) => {
       const chunks = text
         .split(/\n\s*\n|\n(?=\s*•)/)
         .map((t) => t.replace(/\s+/g, " ").trim())
         .filter(Boolean)
         .map((t) => ({ text: t }));
-      speak(chunks, label);
+      speak(chunks, label, onDone);
     },
     [speak],
   );
@@ -208,7 +225,7 @@ export default function A11yProvider({ children }: { children: React.ReactNode }
         setPrefs,
         resetPrefs,
         speechSupported,
-        voices,
+        voices: voices.filter((v) => sameLanguage(v.lang, speech)),
         readState,
         readLabel,
         readPage,
