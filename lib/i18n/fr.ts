@@ -37,6 +37,15 @@ const fr: Dict = {
   },
   access: {
     labels: {
+      accessibleRestroom: "Toilettes accessibles",
+      hearingLoop: "Boucle auditive / aide à l’écoute",
+      largePrintBraille: "Informations en gros caractères / braille",
+      stepByStepCommunication: "Communication simple, étape par étape",
+      supportPersonWelcome: "Accompagnant ou aidant bienvenu",
+      extendedAppointments: "Consultations prolongées et pauses",
+      transferAssistance: "Aide aux transferts",
+      fragranceFree: "Accueil sans parfum",
+
       wheelchairAccessibleExamRoom: "Salle d’examen accessible en fauteuil roulant",
       adjustableHeightExamTable: "Table d’examen à hauteur réglable",
       sensoryQuietWaitingRoom: "Salle d’attente calme, adaptée aux sensibilités sensorielles",
@@ -44,6 +53,15 @@ const fr: Dict = {
       serviceAnimalFriendly: "Animaux d’assistance acceptés",
     },
     short: {
+      accessibleRestroom: "Toilettes accessibles",
+      hearingLoop: "Boucle auditive / aide à l’écoute",
+      largePrintBraille: "Informations en gros caractères / braille",
+      stepByStepCommunication: "Communication simple, étape par étape",
+      supportPersonWelcome: "Accompagnant ou aidant bienvenu",
+      extendedAppointments: "Consultations prolongées et pauses",
+      transferAssistance: "Aide aux transferts",
+      fragranceFree: "Accueil sans parfum",
+
       wheelchairAccessibleExamRoom: "Salle accessible en fauteuil roulant",
       adjustableHeightExamTable: "Table à hauteur réglable",
       sensoryQuietWaitingRoom: "Salle d’attente calme",
@@ -51,6 +69,15 @@ const fr: Dict = {
       serviceAnimalFriendly: "Animaux d’assistance acceptés",
     },
     desc: {
+      accessibleRestroom: "Toilettes accessibles",
+      hearingLoop: "Boucle auditive / aide à l’écoute",
+      largePrintBraille: "Informations en gros caractères / braille",
+      stepByStepCommunication: "Communication simple, étape par étape",
+      supportPersonWelcome: "Accompagnant ou aidant bienvenu",
+      extendedAppointments: "Consultations prolongées et pauses",
+      transferAssistance: "Aide aux transferts",
+      fragranceFree: "Accueil sans parfum",
+
       wheelchairAccessibleExamRoom: "Espace pour tourner et se transférer, entrée sans marche",
       adjustableHeightExamTable: "S’abaisse pour un transfert sûr depuis un fauteuil",
       sensoryQuietWaitingRoom: "Lumière douce, peu de bruit, un endroit calme pour attendre",

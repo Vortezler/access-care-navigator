@@ -46,6 +46,7 @@ export interface CalEventData {
 }
 
 export type ChatAction =
+  | { type: "accessibility"; needs: AccessibilityKey[] }
   | { type: "clinics"; clinics: ClinicSummary[] }
   | {
       type: "booking";
@@ -78,6 +79,11 @@ export interface ChatContext {
 // ---------- Tools ----------
 
 const TOOLS = [
+  {
+    name: "review_accessibility",
+    description: "Suggest a complete list of accessibility accommodations based on what the person actually says. Never infer diagnoses. Shows editable checkboxes; the person must review and save before these suggestions become confirmed needs. Include existing confirmed needs unless the person requests removal. Do not search or book using unconfirmed suggestions; wait for the review.",
+    input_schema: { type: "object", properties: { needs: { type: "array", items: { type: "string", enum: ACCESSIBILITY_KEYS } } }, required: ["needs"] },
+  },
   {
     name: "find_clinics",
     description:
@@ -210,9 +216,15 @@ function runTool(name: string, raw: unknown, ctx: ChatContext): ToolOutcome {
   };
 
   switch (name) {
+    case "review_accessibility": {
+      const needs = Array.isArray(input.needs) ? [...new Set(input.needs.filter(isNeed))] : [];
+      return { content: "Review card displayed. These are unconfirmed suggestions. Wait for the person to save their edited choices before using them.", action: { type: "accessibility", needs } };
+    }
     case "find_clinics": {
       if (!isSpecialty(input.specialty)) return { content: `Unknown specialty. Use one of: ${SPECIALTIES.join(", ")}`, isError: true };
-      const needs = Array.isArray(input.accessibility_needs) ? input.accessibility_needs.filter(isNeed) : [];
+      const needs = ctx.profile?.accessibilityRequirements
+        ? ACCESSIBILITY_KEYS.filter(k => ctx.profile?.accessibilityRequirements?.[k] === true)
+        : [];
       const days = Number.isInteger(input.within_days) ? (input.within_days as number) : 30;
       const intake: IntakeData = {
         patientName: "",
@@ -278,7 +290,9 @@ function runTool(name: string, raw: unknown, ctx: ChatContext): ToolOutcome {
           isError: true,
         };
       const confirmation = confirmationNumber();
-      const needs = Array.isArray(input.accessibility_needs) ? input.accessibility_needs.filter(isNeed) : [];
+      const needs = ctx.profile?.accessibilityRequirements
+        ? ACCESSIBILITY_KEYS.filter(k => ctx.profile?.accessibilityRequirements?.[k] === true)
+        : [];
       return {
         content: JSON.stringify({
           status: "booked (demo simulation — no real clinic was contacted)",
@@ -397,7 +411,11 @@ function systemPrompt(ctx: ChatContext, memory: string[]): string {
 
   return `You are the Care Guide inside AccessCare Navigator, a demo app that helps people with disabilities find accessible medical care. People talk to you by text or by voice; some are blind or low-vision and hear your replies read aloud.
 
+Conversation approach:
+Speak warmly and casually, like a thoughtful care navigator having a conversation, not a formal questionnaire. You are an AI, not a clinician; never pretend to examine or diagnose the person. Ask one or two useful follow-up questions per turn, then listen. If someone mentions a disability without specific needs, ask what makes visits difficult and what support works for them. Tailor questions to their words: moving or transferring, hearing or reading information, communication pace, sensory environment, fatigue or breaks, and whether they want a support person. Do not run through every category or demand a diagnosis. Let people skip questions and avoid asking for information already provided. Distinguish their own needs from those of someone they accompany. When needs are clear, show review_accessibility and let them add, remove or correct the suggested accommodations. Respect corrections and do not repeatedly ask them to reconfirm unchanged choices. Emergency advice always comes first.
+
 What you do:
+- When a person describes accessibility needs or asks to change them, call review_accessibility and wait for their editable review. Suggest accommodations, not disability labels. The current profile is authoritative; removed needs must not be restored from old messages or memory.
 - Help the person work out what kind of care they need (which specialty is the right first stop), from what they tell you and from any PDFs they upload (referral letters, visit summaries, test results, insurance cards).
 - Find clinics with find_clinics. Only mention clinics, times, phone numbers and accessibility features that the tool returned. Never invent them.
 - Book with book_appointment only at clinics with online booking, only for a slot the tool listed, and only after the person clearly says yes to that clinic and time. Bookings here are a simulation; say so briefly the first time.
@@ -470,6 +488,7 @@ async function runWith(provider: Provider, turns: ChatTurn[], ctx: ChatContext):
   const actions: ChatAction[] = [];
   const notes: string[] = [];
   let lastText = "";
+  let awaitingReview = false;
   const deadline = Date.now() + TURN_BUDGET_MS;
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
@@ -490,7 +509,11 @@ async function runWith(provider: Provider, turns: ChatTurn[], ctx: ChatContext):
     if (res.stop_reason !== "tool_use" || !calls.length) break;
 
     const results = calls.map((c) => {
-      const out = runTool(c.name, c.input, ctx);
+      const reviewing = awaitingReview || calls.some((call) => call.name === "review_accessibility");
+      if (reviewing) awaitingReview = true;
+      const out = reviewing && c.name !== "review_accessibility"
+        ? { content: "Wait for accessibility review before other actions.", isError: true } as ToolOutcome
+        : runTool(c.name, c.input, ctx);
       if (out.action) actions.push(out.action);
       if (out.note) notes.push(out.note);
       return { type: "tool_result", tool_use_id: c.id, content: out.content, ...(out.isError ? { is_error: true } : {}) };

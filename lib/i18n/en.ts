@@ -57,6 +57,15 @@ const en = {
   } as Record<Specialty, string>,
   access: {
     labels: {
+      accessibleRestroom: "Accessible restroom",
+      hearingLoop: "Hearing loop / assistive listening",
+      largePrintBraille: "Large print / Braille information",
+      stepByStepCommunication: "Plain-language, step-by-step communication",
+      supportPersonWelcome: "Support person / caregiver welcome",
+      extendedAppointments: "Longer appointments and rest breaks",
+      transferAssistance: "Assistance with transfers",
+      fragranceFree: "Fragrance-free visit arrangements",
+
       wheelchairAccessibleExamRoom: "Wheelchair-accessible exam room",
       adjustableHeightExamTable: "Adjustable-height exam table",
       sensoryQuietWaitingRoom: "Sensory-friendly / quiet waiting room",
@@ -64,6 +73,15 @@ const en = {
       serviceAnimalFriendly: "Service-animal friendly",
     } as Record<AccessibilityKey, string>,
     short: {
+      accessibleRestroom: "Accessible restroom",
+      hearingLoop: "Hearing loop / assistive listening",
+      largePrintBraille: "Large print / Braille information",
+      stepByStepCommunication: "Plain-language, step-by-step communication",
+      supportPersonWelcome: "Support person / caregiver welcome",
+      extendedAppointments: "Longer appointments and rest breaks",
+      transferAssistance: "Assistance with transfers",
+      fragranceFree: "Fragrance-free visit arrangements",
+
       wheelchairAccessibleExamRoom: "Wheelchair-accessible exam room",
       adjustableHeightExamTable: "Adjustable-height exam table",
       sensoryQuietWaitingRoom: "Sensory-friendly / quiet waiting room",
@@ -71,6 +89,15 @@ const en = {
       serviceAnimalFriendly: "Service-animal friendly",
     } as Record<AccessibilityKey, string>,
     desc: {
+      accessibleRestroom: "Accessible restroom",
+      hearingLoop: "Hearing loop / assistive listening",
+      largePrintBraille: "Large print / Braille information",
+      stepByStepCommunication: "Plain-language, step-by-step communication",
+      supportPersonWelcome: "Support person / caregiver welcome",
+      extendedAppointments: "Longer appointments and rest breaks",
+      transferAssistance: "Assistance with transfers",
+      fragranceFree: "Fragrance-free visit arrangements",
+
       wheelchairAccessibleExamRoom: "Room to turn and transfer, step-free entry",
       adjustableHeightExamTable: "Lowers for a safe transfer from a chair",
       sensoryQuietWaitingRoom: "Low light, low noise, a calm place to wait",

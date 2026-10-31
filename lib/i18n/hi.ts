@@ -35,6 +35,15 @@ const hi: Dict = {
   },
   access: {
     labels: {
+      accessibleRestroom: "सुलभ शौचालय",
+      hearingLoop: "हियरिंग लूप / सुनने में सहायता",
+      largePrintBraille: "बड़े अक्षर / ब्रेल जानकारी",
+      stepByStepCommunication: "सरल, चरणबद्ध संवाद",
+      supportPersonWelcome: "सहायक व्यक्ति / देखभालकर्ता का स्वागत",
+      extendedAppointments: "लंबी मुलाकातें और विश्राम",
+      transferAssistance: "स्थानांतरण में सहायता",
+      fragranceFree: "सुगंध-मुक्त मुलाकात की व्यवस्था",
+
       wheelchairAccessibleExamRoom: "व्हीलचेयर से पहुँचने योग्य जाँच कक्ष",
       adjustableHeightExamTable: "ऊँचाई बदलने वाली जाँच टेबल",
       sensoryQuietWaitingRoom: "शांत, संवेदी-अनुकूल प्रतीक्षा कक्ष",
@@ -42,6 +51,15 @@ const hi: Dict = {
       serviceAnimalFriendly: "सहायक पशु की अनुमति",
     },
     short: {
+      accessibleRestroom: "सुलभ शौचालय",
+      hearingLoop: "हियरिंग लूप / सुनने में सहायता",
+      largePrintBraille: "बड़े अक्षर / ब्रेल जानकारी",
+      stepByStepCommunication: "सरल, चरणबद्ध संवाद",
+      supportPersonWelcome: "सहायक व्यक्ति / देखभालकर्ता का स्वागत",
+      extendedAppointments: "लंबी मुलाकातें और विश्राम",
+      transferAssistance: "स्थानांतरण में सहायता",
+      fragranceFree: "सुगंध-मुक्त मुलाकात की व्यवस्था",
+
       wheelchairAccessibleExamRoom: "व्हीलचेयर-सुलभ जाँच कक्ष",
       adjustableHeightExamTable: "ऊँचाई बदलने वाली टेबल",
       sensoryQuietWaitingRoom: "शांत प्रतीक्षा कक्ष",
@@ -49,6 +67,15 @@ const hi: Dict = {
       serviceAnimalFriendly: "सहायक पशु की अनुमति",
     },
     desc: {
+      accessibleRestroom: "सुलभ शौचालय",
+      hearingLoop: "हियरिंग लूप / सुनने में सहायता",
+      largePrintBraille: "बड़े अक्षर / ब्रेल जानकारी",
+      stepByStepCommunication: "सरल, चरणबद्ध संवाद",
+      supportPersonWelcome: "सहायक व्यक्ति / देखभालकर्ता का स्वागत",
+      extendedAppointments: "लंबी मुलाकातें और विश्राम",
+      transferAssistance: "स्थानांतरण में सहायता",
+      fragranceFree: "सुगंध-मुक्त मुलाकात की व्यवस्था",
+
       wheelchairAccessibleExamRoom: "मुड़ने और स्थानांतरण की जगह, बिना सीढ़ी का प्रवेश",
       adjustableHeightExamTable: "कुर्सी से सुरक्षित स्थानांतरण के लिए नीचे हो जाती है",
       sensoryQuietWaitingRoom: "कम रोशनी, कम शोर, इंतज़ार की शांत जगह",

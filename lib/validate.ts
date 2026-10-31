@@ -23,7 +23,7 @@ export function validateIntake(body: unknown): { data?: IntakeData; errors: stri
   if (b.autonomyMode !== "auto_book_preferred" && b.autonomyMode !== "call_prep_only") errors.push("Choose a booking preference.");
 
   const reqs = b.accessibilityRequirements as Record<string, unknown> | undefined;
-  if (!reqs || typeof reqs !== "object" || ACCESSIBILITY_KEYS.some((k) => typeof reqs[k] !== "boolean")) {
+  if (!reqs || typeof reqs !== "object" || ACCESSIBILITY_KEYS.some((k) => reqs[k] !== undefined && typeof reqs[k] !== "boolean")) {
     errors.push("Accessibility requirements are malformed.");
   }
 
@@ -39,7 +39,7 @@ export function validateIntake(body: unknown): { data?: IntakeData; errors: stri
       urgencyWindowDays: days,
       autonomyMode: b.autonomyMode as IntakeData["autonomyMode"],
       accessibilityRequirements: Object.fromEntries(
-        ACCESSIBILITY_KEYS.map((k) => [k, reqs![k] as boolean]),
+        ACCESSIBILITY_KEYS.map((k) => [k, reqs![k] === true]),
       ) as unknown as IntakeData["accessibilityRequirements"],
     },
   };

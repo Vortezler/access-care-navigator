@@ -37,6 +37,15 @@ const es: Dict = {
   },
   access: {
     labels: {
+      accessibleRestroom: "Baño accesible",
+      hearingLoop: "Bucle auditivo / ayuda auditiva",
+      largePrintBraille: "Información en letra grande / braille",
+      stepByStepCommunication: "Comunicación clara, paso a paso",
+      supportPersonWelcome: "Acompañante o cuidador bienvenido",
+      extendedAppointments: "Citas más largas y descansos",
+      transferAssistance: "Ayuda para transferencias",
+      fragranceFree: "Visita sin fragancias",
+
       wheelchairAccessibleExamRoom: "Consultorio accesible en silla de ruedas",
       adjustableHeightExamTable: "Camilla de altura ajustable",
       sensoryQuietWaitingRoom: "Sala de espera tranquila y sensorialmente amigable",
@@ -44,6 +53,15 @@ const es: Dict = {
       serviceAnimalFriendly: "Admite animales de servicio",
     },
     short: {
+      accessibleRestroom: "Baño accesible",
+      hearingLoop: "Bucle auditivo / ayuda auditiva",
+      largePrintBraille: "Información en letra grande / braille",
+      stepByStepCommunication: "Comunicación clara, paso a paso",
+      supportPersonWelcome: "Acompañante o cuidador bienvenido",
+      extendedAppointments: "Citas más largas y descansos",
+      transferAssistance: "Ayuda para transferencias",
+      fragranceFree: "Visita sin fragancias",
+
       wheelchairAccessibleExamRoom: "Consultorio accesible en silla de ruedas",
       adjustableHeightExamTable: "Camilla de altura ajustable",
       sensoryQuietWaitingRoom: "Sala de espera tranquila",
@@ -51,6 +69,15 @@ const es: Dict = {
       serviceAnimalFriendly: "Admite animales de servicio",
     },
     desc: {
+      accessibleRestroom: "Baño accesible",
+      hearingLoop: "Bucle auditivo / ayuda auditiva",
+      largePrintBraille: "Información en letra grande / braille",
+      stepByStepCommunication: "Comunicación clara, paso a paso",
+      supportPersonWelcome: "Acompañante o cuidador bienvenido",
+      extendedAppointments: "Citas más largas y descansos",
+      transferAssistance: "Ayuda para transferencias",
+      fragranceFree: "Visita sin fragancias",
+
       wheelchairAccessibleExamRoom: "Espacio para girar y trasladarse, entrada sin escalones",
       adjustableHeightExamTable: "Baja para un traslado seguro desde la silla",
       sensoryQuietWaitingRoom: "Poca luz, poco ruido, un lugar tranquilo para esperar",

@@ -35,6 +35,15 @@ const vi: Dict = {
   },
   access: {
     labels: {
+      accessibleRestroom: "Nhà vệ sinh dễ tiếp cận",
+      hearingLoop: "Vòng trợ thính / thiết bị hỗ trợ nghe",
+      largePrintBraille: "Thông tin chữ lớn / chữ nổi",
+      stepByStepCommunication: "Giao tiếp đơn giản, từng bước",
+      supportPersonWelcome: "Cho phép người hỗ trợ / chăm sóc",
+      extendedAppointments: "Khám lâu hơn và có giờ nghỉ",
+      transferAssistance: "Hỗ trợ chuyển vị trí",
+      fragranceFree: "Sắp xếp khám không có hương liệu",
+
       wheelchairAccessibleExamRoom: "Phòng khám xe lăn vào được",
       adjustableHeightExamTable: "Giường khám điều chỉnh được độ cao",
       sensoryQuietWaitingRoom: "Phòng chờ yên tĩnh, thân thiện giác quan",
@@ -42,6 +51,15 @@ const vi: Dict = {
       serviceAnimalFriendly: "Cho phép động vật hỗ trợ",
     },
     short: {
+      accessibleRestroom: "Nhà vệ sinh dễ tiếp cận",
+      hearingLoop: "Vòng trợ thính / thiết bị hỗ trợ nghe",
+      largePrintBraille: "Thông tin chữ lớn / chữ nổi",
+      stepByStepCommunication: "Giao tiếp đơn giản, từng bước",
+      supportPersonWelcome: "Cho phép người hỗ trợ / chăm sóc",
+      extendedAppointments: "Khám lâu hơn và có giờ nghỉ",
+      transferAssistance: "Hỗ trợ chuyển vị trí",
+      fragranceFree: "Sắp xếp khám không có hương liệu",
+
       wheelchairAccessibleExamRoom: "Phòng khám xe lăn vào được",
       adjustableHeightExamTable: "Giường khám điều chỉnh độ cao",
       sensoryQuietWaitingRoom: "Phòng chờ yên tĩnh",
@@ -49,6 +67,15 @@ const vi: Dict = {
       serviceAnimalFriendly: "Cho phép động vật hỗ trợ",
     },
     desc: {
+      accessibleRestroom: "Nhà vệ sinh dễ tiếp cận",
+      hearingLoop: "Vòng trợ thính / thiết bị hỗ trợ nghe",
+      largePrintBraille: "Thông tin chữ lớn / chữ nổi",
+      stepByStepCommunication: "Giao tiếp đơn giản, từng bước",
+      supportPersonWelcome: "Cho phép người hỗ trợ / chăm sóc",
+      extendedAppointments: "Khám lâu hơn và có giờ nghỉ",
+      transferAssistance: "Hỗ trợ chuyển vị trí",
+      fragranceFree: "Sắp xếp khám không có hương liệu",
+
       wheelchairAccessibleExamRoom: "Đủ chỗ xoay và di chuyển, lối vào không có bậc",
       adjustableHeightExamTable: "Hạ thấp để chuyển từ xe lăn sang an toàn",
       sensoryQuietWaitingRoom: "Ánh sáng dịu, ít tiếng ồn, chỗ chờ yên tĩnh",

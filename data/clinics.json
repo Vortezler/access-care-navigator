@@ -16,7 +16,15 @@
       "adjustableHeightExamTable": true,
       "sensoryQuietWaitingRoom": true,
       "aslInterpreterRequired": true,
-      "serviceAnimalFriendly": true
+      "serviceAnimalFriendly": true,
+      "accessibleRestroom": false,
+      "hearingLoop": true,
+      "largePrintBraille": true,
+      "stepByStepCommunication": false,
+      "supportPersonWelcome": true,
+      "extendedAppointments": true,
+      "transferAssistance": false,
+      "fragranceFree": true
     },
     "hasOnlineBooking": true,
     "openSlots": [
@@ -43,7 +51,15 @@
       "adjustableHeightExamTable": true,
       "sensoryQuietWaitingRoom": false,
       "aslInterpreterRequired": true,
-      "serviceAnimalFriendly": true
+      "serviceAnimalFriendly": true,
+      "accessibleRestroom": true,
+      "hearingLoop": true,
+      "largePrintBraille": false,
+      "stepByStepCommunication": true,
+      "supportPersonWelcome": true,
+      "extendedAppointments": false,
+      "transferAssistance": true,
+      "fragranceFree": true
     },
     "hasOnlineBooking": false,
     "openSlots": [
@@ -68,7 +84,15 @@
       "adjustableHeightExamTable": false,
       "sensoryQuietWaitingRoom": true,
       "aslInterpreterRequired": false,
-      "serviceAnimalFriendly": true
+      "serviceAnimalFriendly": true,
+      "accessibleRestroom": true,
+      "hearingLoop": false,
+      "largePrintBraille": true,
+      "stepByStepCommunication": true,
+      "supportPersonWelcome": false,
+      "extendedAppointments": true,
+      "transferAssistance": true,
+      "fragranceFree": false
     },
     "hasOnlineBooking": true,
     "openSlots": [
@@ -93,7 +117,15 @@
       "adjustableHeightExamTable": true,
       "sensoryQuietWaitingRoom": false,
       "aslInterpreterRequired": true,
-      "serviceAnimalFriendly": true
+      "serviceAnimalFriendly": true,
+      "accessibleRestroom": false,
+      "hearingLoop": true,
+      "largePrintBraille": true,
+      "stepByStepCommunication": false,
+      "supportPersonWelcome": true,
+      "extendedAppointments": true,
+      "transferAssistance": false,
+      "fragranceFree": true
     },
     "hasOnlineBooking": true,
     "openSlots": [
@@ -119,7 +151,15 @@
       "adjustableHeightExamTable": false,
       "sensoryQuietWaitingRoom": true,
       "aslInterpreterRequired": false,
-      "serviceAnimalFriendly": true
+      "serviceAnimalFriendly": true,
+      "accessibleRestroom": true,
+      "hearingLoop": true,
+      "largePrintBraille": false,
+      "stepByStepCommunication": true,
+      "supportPersonWelcome": true,
+      "extendedAppointments": false,
+      "transferAssistance": true,
+      "fragranceFree": true
     },
     "hasOnlineBooking": false,
     "openSlots": [
@@ -144,7 +184,15 @@
       "adjustableHeightExamTable": true,
       "sensoryQuietWaitingRoom": true,
       "aslInterpreterRequired": true,
-      "serviceAnimalFriendly": false
+      "serviceAnimalFriendly": false,
+      "accessibleRestroom": true,
+      "hearingLoop": false,
+      "largePrintBraille": true,
+      "stepByStepCommunication": true,
+      "supportPersonWelcome": false,
+      "extendedAppointments": true,
+      "transferAssistance": true,
+      "fragranceFree": false
     },
     "hasOnlineBooking": false,
     "openSlots": [
@@ -170,7 +218,15 @@
       "adjustableHeightExamTable": true,
       "sensoryQuietWaitingRoom": false,
       "aslInterpreterRequired": false,
-      "serviceAnimalFriendly": true
+      "serviceAnimalFriendly": true,
+      "accessibleRestroom": false,
+      "hearingLoop": true,
+      "largePrintBraille": true,
+      "stepByStepCommunication": false,
+      "supportPersonWelcome": true,
+      "extendedAppointments": true,
+      "transferAssistance": false,
+      "fragranceFree": true
     },
     "hasOnlineBooking": true,
     "openSlots": [
@@ -197,7 +253,15 @@
       "adjustableHeightExamTable": true,
       "sensoryQuietWaitingRoom": true,
       "aslInterpreterRequired": true,
-      "serviceAnimalFriendly": true
+      "serviceAnimalFriendly": true,
+      "accessibleRestroom": true,
+      "hearingLoop": true,
+      "largePrintBraille": false,
+      "stepByStepCommunication": true,
+      "supportPersonWelcome": true,
+      "extendedAppointments": false,
+      "transferAssistance": true,
+      "fragranceFree": true
     },
     "hasOnlineBooking": false,
     "openSlots": [
@@ -223,7 +287,15 @@
       "adjustableHeightExamTable": false,
       "sensoryQuietWaitingRoom": true,
       "aslInterpreterRequired": true,
-      "serviceAnimalFriendly": true
+      "serviceAnimalFriendly": true,
+      "accessibleRestroom": true,
+      "hearingLoop": false,
+      "largePrintBraille": true,
+      "stepByStepCommunication": true,
+      "supportPersonWelcome": false,
+      "extendedAppointments": true,
+      "transferAssistance": true,
+      "fragranceFree": false
     },
     "hasOnlineBooking": true,
     "openSlots": [
@@ -250,7 +322,15 @@
       "adjustableHeightExamTable": true,
       "sensoryQuietWaitingRoom": true,
       "aslInterpreterRequired": false,
-      "serviceAnimalFriendly": true
+      "serviceAnimalFriendly": true,
+      "accessibleRestroom": false,
+      "hearingLoop": true,
+      "largePrintBraille": true,
+      "stepByStepCommunication": false,
+      "supportPersonWelcome": true,
+      "extendedAppointments": true,
+      "transferAssistance": false,
+      "fragranceFree": true
     },
     "hasOnlineBooking": true,
     "openSlots": [
@@ -276,7 +356,15 @@
       "adjustableHeightExamTable": true,
       "sensoryQuietWaitingRoom": false,
       "aslInterpreterRequired": true,
-      "serviceAnimalFriendly": true
+      "serviceAnimalFriendly": true,
+      "accessibleRestroom": true,
+      "hearingLoop": true,
+      "largePrintBraille": false,
+      "stepByStepCommunication": true,
+      "supportPersonWelcome": true,
+      "extendedAppointments": false,
+      "transferAssistance": true,
+      "fragranceFree": true
     },
     "hasOnlineBooking": false,
     "openSlots": [
@@ -286,7 +374,7 @@
   },
   {
     "id": "obgyn-bayview",
-    "name": "Bayview Women’s Health",
+    "name": "Bayview Women\u00e2\u20ac\u2122s Health",
     "specialty": "OB/GYN",
     "address": "640 Bayview Terrace, Suite 410, Port Juniper, OR 97401",
     "phone": "(503) 555-0170",
@@ -302,7 +390,15 @@
       "adjustableHeightExamTable": true,
       "sensoryQuietWaitingRoom": true,
       "aslInterpreterRequired": true,
-      "serviceAnimalFriendly": false
+      "serviceAnimalFriendly": false,
+      "accessibleRestroom": true,
+      "hearingLoop": false,
+      "largePrintBraille": true,
+      "stepByStepCommunication": true,
+      "supportPersonWelcome": false,
+      "extendedAppointments": true,
+      "transferAssistance": true,
+      "fragranceFree": false
     },
     "hasOnlineBooking": true,
     "openSlots": [
@@ -328,7 +424,15 @@
       "adjustableHeightExamTable": false,
       "sensoryQuietWaitingRoom": true,
       "aslInterpreterRequired": true,
-      "serviceAnimalFriendly": true
+      "serviceAnimalFriendly": true,
+      "accessibleRestroom": false,
+      "hearingLoop": true,
+      "largePrintBraille": true,
+      "stepByStepCommunication": false,
+      "supportPersonWelcome": true,
+      "extendedAppointments": true,
+      "transferAssistance": false,
+      "fragranceFree": true
     },
     "hasOnlineBooking": false,
     "openSlots": [
@@ -353,7 +457,15 @@
       "adjustableHeightExamTable": false,
       "sensoryQuietWaitingRoom": false,
       "aslInterpreterRequired": true,
-      "serviceAnimalFriendly": true
+      "serviceAnimalFriendly": true,
+      "accessibleRestroom": true,
+      "hearingLoop": true,
+      "largePrintBraille": false,
+      "stepByStepCommunication": true,
+      "supportPersonWelcome": true,
+      "extendedAppointments": false,
+      "transferAssistance": true,
+      "fragranceFree": true
     },
     "hasOnlineBooking": true,
     "openSlots": [
@@ -379,7 +491,15 @@
       "adjustableHeightExamTable": true,
       "sensoryQuietWaitingRoom": true,
       "aslInterpreterRequired": false,
-      "serviceAnimalFriendly": true
+      "serviceAnimalFriendly": true,
+      "accessibleRestroom": true,
+      "hearingLoop": false,
+      "largePrintBraille": true,
+      "stepByStepCommunication": true,
+      "supportPersonWelcome": false,
+      "extendedAppointments": true,
+      "transferAssistance": true,
+      "fragranceFree": false
     },
     "hasOnlineBooking": true,
     "openSlots": [

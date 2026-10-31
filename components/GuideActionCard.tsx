@@ -18,6 +18,8 @@ export default function GuideActionCard({ action }: { action: ChatAction }) {
   const [copied, setCopied] = useState(false);
   const g = t.guide;
 
+  if (action.type === "accessibility") return null;
+
   if (action.type === "clinics") {
     return (
       <section className="action-card" aria-label={g.clinicsFound(action.clinics.length)}>

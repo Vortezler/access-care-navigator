@@ -205,3 +205,7 @@ Under reduced-motion settings, every movement becomes a short cross-fade.
 Voice conversations support interruption: the microphone remains active during replies and thinking. Speaking stops playback and supersedes a pending reply. Recognition restarts between utterances automatically; Stop speaking returns directly to listening. Headphones are recommended to reduce speaker echo. This uses browser speech recognition and synthesis, so voice quality, pause detection, and latency depend on the browser; it is not a native realtime audio model.
 
 Local development uses .next-dev and production builds use .next so building does not corrupt a running dev server. See VERIFICATION.md for checked features and remaining device/integration checks. The guide provides general health information and care navigation, not clinically validated diagnosis or prescribing.
+
+### Reviewed accessibility needs
+
+Thirteen accommodation choices cover mobility, hearing, vision, communication, sensory access, fatigue and caregiver support. All clinic capabilities are fictional demo values. The Care Guide asks focused follow-up questions and proposes an editable checklist rather than inferring a diagnosis. Suggestions require Save reviewed needs; users can add, remove or clear every choice. Confirmed choices are kept in this tab, passed to subsequent chat searches/bookings and loaded by the intake form. Saving changes clears stale search results; run a new search to refresh matches.

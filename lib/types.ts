@@ -1,4 +1,13 @@
 export interface AccessibilityRequirements {
+  accessibleRestroom: boolean;
+  hearingLoop: boolean;
+  largePrintBraille: boolean;
+  stepByStepCommunication: boolean;
+  supportPersonWelcome: boolean;
+  extendedAppointments: boolean;
+  transferAssistance: boolean;
+  fragranceFree: boolean;
+
   wheelchairAccessibleExamRoom: boolean;
   adjustableHeightExamTable: boolean;
   sensoryQuietWaitingRoom: boolean;
@@ -61,6 +70,15 @@ export const SPECIALTIES = [
 ] as const;
 
 export const ACCESSIBILITY_LABELS: Record<AccessibilityKey, string> = {
+  accessibleRestroom: "Accessible restroom",
+  hearingLoop: "Hearing loop / assistive listening",
+  largePrintBraille: "Large print / Braille information",
+  stepByStepCommunication: "Plain-language, step-by-step communication",
+  supportPersonWelcome: "Support person / caregiver welcome",
+  extendedAppointments: "Longer appointments and rest breaks",
+  transferAssistance: "Assistance with transfers",
+  fragranceFree: "Fragrance-free visit arrangements",
+
   wheelchairAccessibleExamRoom: "Wheelchair-accessible exam room",
   adjustableHeightExamTable: "Adjustable-height exam table",
   sensoryQuietWaitingRoom: "Sensory-friendly / quiet waiting room",

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AccessibilityKey, IntakeData, MatchResult, Specialty, SpecialtySuggestion, TextSource } from "@/lib/types";
 import { ACCESSIBILITY_KEYS, SPECIALTIES } from "@/lib/types";
-import { loadIntakeDraft, saveSession } from "@/lib/session";
+import { loadIntakeDraft, loadReviewedNeeds, saveReviewedNeeds, saveSession } from "@/lib/session";
 import { matchSpecialty, normalizeId, parseDays } from "@/lib/voice";
 import SuggestionCard from "./SuggestionCard";
 import { useI18n } from "./I18nProvider";
@@ -31,6 +31,15 @@ const EMPTY: Form = {
   reasonForVisit: "",
   urgencyWindowDays: "14",
   accessibilityRequirements: {
+    accessibleRestroom: false,
+    hearingLoop: false,
+    largePrintBraille: false,
+    stepByStepCommunication: false,
+    supportPersonWelcome: false,
+    extendedAppointments: false,
+    transferAssistance: false,
+    fragranceFree: false,
+
     wheelchairAccessibleExamRoom: false,
     adjustableHeightExamTable: false,
     sensoryQuietWaitingRoom: false,
@@ -48,6 +57,15 @@ const SAMPLE: Form = {
   reasonForVisit: "Recurring migraines with numbness in my left hand over the past month.",
   urgencyWindowDays: "14",
   accessibilityRequirements: {
+    accessibleRestroom: false,
+    hearingLoop: false,
+    largePrintBraille: false,
+    stepByStepCommunication: false,
+    supportPersonWelcome: false,
+    extendedAppointments: false,
+    transferAssistance: false,
+    fragranceFree: false,
+
     wheelchairAccessibleExamRoom: true,
     adjustableHeightExamTable: true,
     sensoryQuietWaitingRoom: false,
@@ -77,6 +95,7 @@ export default function IntakeForm() {
   const { t, lang } = useI18n();
   const LABELS = t.form.labels;
   const [form, setForm] = useState<Form>(EMPTY);
+  useEffect(() => { const needs = loadReviewedNeeds(); if (needs) setForm(current => ({ ...current, accessibilityRequirements: needs })); }, []);
   const [errors, setErrors] = useState<Partial<Record<FieldKey, true>>>({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -185,6 +204,7 @@ export default function IntakeForm() {
       });
       const json = (await res.json()) as { results?: MatchResult[]; errors?: string[] };
       if (!res.ok || !json.results) throw new Error(json.errors?.join(" ") || t.form.somethingWrong);
+      saveReviewedNeeds(form.accessibilityRequirements);
       saveSession({ intake, results: json.results });
       setStatus(t.form.found(json.results.length));
       router.push("/results");
@@ -443,7 +463,7 @@ export default function IntakeForm() {
         <div className="choices choices--2">
           {ACCESSIBILITY_KEYS.map((k) => (
             <label className="choice" key={k}>
-              <input type="checkbox" checked={form.accessibilityRequirements[k]} onChange={() => toggleNeed(k)} />
+              <input type="checkbox" checked={Boolean(form.accessibilityRequirements[k])} onChange={() => toggleNeed(k)} />
               <span className="choice__indicator" aria-hidden>
                 <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                   <path className="choice__check" d="m3.5 8.4 2.9 2.8 6.1-6.4" />
@@ -451,7 +471,7 @@ export default function IntakeForm() {
               </span>
               <span className="choice__text">
                 <span className="choice__title">{t.access.short[k]}</span>
-                <span className="choice__desc">{t.access.desc[k]}</span>
+                {t.access.desc[k] !== t.access.short[k] && <span className="choice__desc">{t.access.desc[k]}</span>}
               </span>
             </label>
           ))}

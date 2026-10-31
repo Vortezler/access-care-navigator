@@ -35,6 +35,15 @@ const zh: Dict = {
   },
   access: {
     labels: {
+      accessibleRestroom: "无障碍卫生间",
+      hearingLoop: "感应环路／辅助听力设备",
+      largePrintBraille: "大字版／盲文资料",
+      stepByStepCommunication: "简单清晰的分步沟通",
+      supportPersonWelcome: "允许陪同人员／照护者",
+      extendedAppointments: "延长就诊时间及休息",
+      transferAssistance: "协助移位",
+      fragranceFree: "无香氛就诊安排",
+
       wheelchairAccessibleExamRoom: "轮椅可进入的诊室",
       adjustableHeightExamTable: "可调高度的检查床",
       sensoryQuietWaitingRoom: "安静、感官友好的候诊室",
@@ -42,6 +51,15 @@ const zh: Dict = {
       serviceAnimalFriendly: "允许服务动物",
     },
     short: {
+      accessibleRestroom: "无障碍卫生间",
+      hearingLoop: "感应环路／辅助听力设备",
+      largePrintBraille: "大字版／盲文资料",
+      stepByStepCommunication: "简单清晰的分步沟通",
+      supportPersonWelcome: "允许陪同人员／照护者",
+      extendedAppointments: "延长就诊时间及休息",
+      transferAssistance: "协助移位",
+      fragranceFree: "无香氛就诊安排",
+
       wheelchairAccessibleExamRoom: "轮椅可进入的诊室",
       adjustableHeightExamTable: "可调高度的检查床",
       sensoryQuietWaitingRoom: "安静的候诊室",
@@ -49,6 +67,15 @@ const zh: Dict = {
       serviceAnimalFriendly: "允许服务动物",
     },
     desc: {
+      accessibleRestroom: "无障碍卫生间",
+      hearingLoop: "感应环路／辅助听力设备",
+      largePrintBraille: "大字版／盲文资料",
+      stepByStepCommunication: "简单清晰的分步沟通",
+      supportPersonWelcome: "允许陪同人员／照护者",
+      extendedAppointments: "延长就诊时间及休息",
+      transferAssistance: "协助移位",
+      fragranceFree: "无香氛就诊安排",
+
       wheelchairAccessibleExamRoom: "有足够空间转身和移位，无台阶入口",
       adjustableHeightExamTable: "可降低高度，方便从轮椅安全移位",
       sensoryQuietWaitingRoom: "光线柔和、噪音小，可以安静等候",

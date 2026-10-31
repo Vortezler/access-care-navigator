@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatAction, ChatReply } from "@/lib/care-guide";
 import type { Recognition } from "@/lib/voice";
 import { claim, errorKey, getRecognitionCtor, release } from "@/lib/voice";
-import { loadSession } from "@/lib/session";
+import AccessibilityReview from "./AccessibilityReview";
+import { ACCESSIBILITY_KEYS, type AccessibilityKey } from "@/lib/types";
+import { loadReviewedNeeds, saveReviewedNeeds, loadSession } from "@/lib/session";
 import { useA11y } from "./A11yProvider";
 import { useI18n } from "./I18nProvider";
 import GuideActionCard from "./GuideActionCard";
@@ -139,7 +141,7 @@ export default function CareGuide() {
           body: JSON.stringify({
             lang,
             tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            profile: loadSession()?.intake ?? null,
+            profile: { ...loadSession()?.intake, accessibilityRequirements: loadReviewedNeeds() ?? loadSession()?.intake.accessibilityRequirements },
             messages: history.map((m) => ({
               role: m.role,
               text: m.text,
@@ -245,6 +247,18 @@ export default function CareGuide() {
     }
   }, [speech, stopSpeaking, send, t.voice.errors]);
   listenRef.current = listen;
+
+  function saveNeeds(needs: AccessibilityKey[]) {
+    const requirements = Object.fromEntries(ACCESSIBILITY_KEYS.map(k => [k, needs.includes(k)])) as unknown as import("@/lib/types").AccessibilityRequirements;
+    saveReviewedNeeds(requirements);
+    request.current?.abort();
+    request.current = null;
+    setBusy(false);
+    endVoice();
+    const note: Msg = { id: nextId.current++, role: "user", text: `I reviewed and saved my accessibility needs: ${needs.map(k => t.access.labels[k]).join("; ") || "none"}. Use only these confirmed needs; replace earlier choices.` };
+    messagesRef.current = [...messagesRef.current, note];
+    setMessages(messagesRef.current);
+  }
 
   function startVoice() {
     voiceOn.current = true;
@@ -352,7 +366,7 @@ export default function CareGuide() {
               </ul>
             )}
             {m.text && <p className="msg__text">{m.text}</p>}
-            {m.actions?.map((a, i) => <GuideActionCard key={i} action={a} />)}
+            {m.actions?.map((a, i) => a.type === "accessibility" ? <AccessibilityReview key={i} initial={a.needs} onSave={saveNeeds} /> : <GuideActionCard key={i} action={a} />)}
             {m.source === "template" && (
               <p className="source-tag">
                 <Alert size={14} /> {g.unavailable}
