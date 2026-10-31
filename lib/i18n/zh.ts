@@ -1,4 +1,4 @@
-import type { Dict, ScriptArgs } from "./en";
+import type { Dict, MessageArgs, ScriptArgs } from "./en";
 
 const zh: Dict = {
   common: { close: "关闭", newTab: "（在新标签页中打开）", language: "语言" },
@@ -180,6 +180,7 @@ const zh: Dict = {
     book: "预约时段",
     script: "获取通话稿",
     bookInstead: "改为在线预约",
+    message: "给诊所发邮件或短信",
   },
   booking: {
     title: (c: string) => `预约 ${c}`,
@@ -220,6 +221,34 @@ const zh: Dict = {
     readingLabel: "正在朗读您的通话稿",
     remind: "提醒我打电话",
     reminderAt: (when: string) => `提醒时间为 ${when}，这时大多数前台都在上班。`,
+  },
+  msg: {
+    title: (c: string) => `给 ${c} 发消息`,
+    subtitle: "我们为您起草。您可以随意修改，然后用自己的邮箱或短信应用发送。",
+    email: "电子邮件",
+    text: "短信",
+    channel: "发送方式",
+    subject: "主题",
+    body: "内容",
+    to: (addr: string) => `收件人：${addr}`,
+    writing: "正在起草消息…",
+    ready: "草稿已准备好。",
+    openEmail: "在邮件应用中打开",
+    openText: "在短信应用中打开",
+    copy: "复制",
+    copied: "已复制",
+    copiedStatus: "消息已复制到剪贴板。",
+    listen: "收听",
+    note: "在您自己的应用中按下发送之前，不会发出任何内容。",
+    demoNote: "演示诊所：地址和号码均为虚构，消息不会发送到真实诊所。",
+    errorTitle: "无法起草消息",
+    failed: "无法起草消息。",
+    tryAgain: "重试",
+    source: {
+      bedrock: "由 Claude（AWS Bedrock）起草",
+      anthropic: "由 Claude 起草",
+      template: "基于标准模板（AI 不可用）",
+    },
   },
   cal: {
     nouns: { appointment: "预约", reminder: "提醒", event: "日程" },
@@ -353,6 +382,10 @@ const zh: Dict = {
     booked: "已预约（演示）",
     calendarCard: "日历日程",
     scriptCard: (c: string) => `打给 ${c} 的通话稿`,
+    selfCareTitle: "等待就诊期间",
+    warningTitle: "出现以下情况请立即求助",
+    selfCareNote: "一般居家护理建议，不是医疗建议。服用任何新药前请先咨询药剂师，尤其是在服用其他药物、怀孕或有过敏时。",
+    draftTitle: (c: string) => `给 ${c} 的草稿`,
   },
   tpl: {
     languageName: "Simplified Chinese (简体中文)",
@@ -387,6 +420,26 @@ ${
     triageEmergency: "您写的部分内容可能是紧急状况的信号。请立即拨打 911 或前往最近的急诊室。",
     chatUnavailable:
       "我现在无法回答：本服务器没有连接 AI 服务，所以我不能阅读文件或对话。您仍然可以使用首页的表单查找和预约无障碍诊所，每个结果都有通话稿和日历按钮。",
+    emailSubject: (name: string) => `新患者预约申请 – ${name}`,
+    email: (a: MessageArgs) => `${a.clinic} 团队，您好：
+
+我叫${a.name}，想预约${a.specialty}的初诊。
+
+就诊原因：${a.reason}
+
+我的保险是 ${a.insurance}（会员号 ${a.memberId}）。请问贵诊所在这个保险的网络内吗？
+
+我有残障，希望确认就诊过程无障碍。请问贵诊所是否有：
+${a.needs.length ? a.needs.map((n) => `- ${n}`).join("\n") : "- 可提供的便利安排（想了解有哪些）"}
+
+如果有些无法提供，请告诉我可以怎样替代安排，或记录在我的档案中。
+
+我希望在接下来 ${a.days} 天内就诊。能否回复最早的可预约时间？
+
+谢谢，
+${a.name}`,
+    sms: (a: MessageArgs) =>
+      `您好，我是${a.name}。我想在 ${a.days} 天内预约${a.specialty}初诊。${a.needs.length ? `我需要：${a.needs.join("、")}。` : ""}保险：${a.insurance}。能否短信或来电告诉我可约时间？谢谢！`,
   },
 };
 

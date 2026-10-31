@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { IntakeData, MatchResult } from "@/lib/types";
 import { ACCESSIBILITY_KEYS } from "@/lib/types";
 import { useT } from "./I18nProvider";
-import { Calendar, Check, Cross, Phone, Sparkle } from "./Icons";
+import { Calendar, Chat, Check, Cross, Phone, Sparkle } from "./Icons";
 
 interface Props {
   result: MatchResult;
@@ -12,6 +12,7 @@ interface Props {
   intake: IntakeData;
   onBook: () => void;
   onScript: () => void;
+  onMessage: () => void;
 }
 
 const R = 34;
@@ -52,7 +53,7 @@ function ScoreRing({ score, delay }: { score: number; delay: number }) {
   );
 }
 
-export default function ClinicCard({ result, index, intake, onBook, onScript }: Props) {
+export default function ClinicCard({ result, index, intake, onBook, onScript, onMessage }: Props) {
   const { clinic } = result;
   const t = useT();
   const c = t.card;
@@ -179,6 +180,10 @@ export default function ClinicCard({ result, index, intake, onBook, onScript }: 
           ) : (
             scriptBtn(true)
           )}
+          <button type="button" className="btn btn--secondary" onClick={onMessage} aria-describedby={headingId}>
+            <Chat />
+            {c.message}
+          </button>
         </div>
       </article>
     </li>

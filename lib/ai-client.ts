@@ -309,3 +309,81 @@ export function generateAdvocacyScript(clinic: Clinic, intake: IntakeData, d: Di
     () => templateScript(clinic, intake, d),
   );
 }
+
+// ---------------------------------------------------------------------------
+// Email / text-message drafts to a clinic's front desk
+
+export type Channel = "email" | "sms";
+
+export interface ClinicMessage {
+  subject: string; // empty for text messages
+  body: string;
+}
+
+export function templateMessage(clinic: Clinic, intake: IntakeData, channel: Channel, d: Dict = getDict("en")): ClinicMessage {
+  const args = {
+    clinic: clinic.name,
+    name: intake.patientName,
+    specialty: d.specialties[intake.specialty as Specialty] ?? intake.specialty,
+    reason: intake.reasonForVisit,
+    insurance: intake.insurancePayer,
+    memberId: intake.memberId,
+    needs: listNeeds(intake.accessibilityRequirements, d.access.labels),
+    days: intake.urgencyWindowDays,
+  };
+  return channel === "email"
+    ? { subject: d.tpl.emailSubject(intake.patientName), body: d.tpl.email(args) }
+    : { subject: "", body: d.tpl.sms(args) };
+}
+
+const MESSAGE_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: { subject: { type: "string" }, body: { type: "string" } },
+  required: ["subject", "body"],
+};
+
+function parseMessage(raw: unknown): ClinicMessage | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.body !== "string" || r.body.trim().length < 20) return null;
+  return { subject: typeof r.subject === "string" ? r.subject.trim() : "", body: r.body.trim() };
+}
+
+export function generateClinicMessage(
+  clinic: Clinic,
+  intake: IntakeData,
+  channel: Channel,
+  d: Dict = getDict("en"),
+): Promise<{ value: ClinicMessage; source: TextSource }> {
+  const needs = listNeeds(intake.accessibilityRequirements);
+  const shape =
+    channel === "email"
+      ? "an email. Give it a clear subject line and a body under 200 words, signed with their name. Put each accessibility need on its own line starting with '- ' and ask the clinic to confirm it."
+      : "a text message (SMS). subject must be an empty string. The body must be under 320 characters: who they are, what they want booked and by when, the accessibility needs in one sentence, their insurance, and a request to text or call back with times.";
+  return generateStructured(
+    {
+      maxTokens: 3000,
+      effort: "low",
+      schema: MESSAGE_SCHEMA,
+      system:
+        `You draft ${shape} It is from a disabled patient to a clinic's front desk, asking to book a new-patient appointment. ` +
+        "First person, polite and confident, never apologetic about accommodations. Include the reason for the visit in brief, " +
+        "the insurance (and member ID in an email), and the time window. Use only the facts given; never invent details. " +
+        "Plain text, no markdown except '- ' bullets. " +
+        languageRule(d) +
+        ' Reply with only a JSON object: {"subject": string, "body": string}.',
+      user: [
+        `Patient name: ${intake.patientName}`,
+        `Clinic: ${clinic.name}`,
+        `Specialty: ${intake.specialty}`,
+        `Reason for visit (patient's words): ${intake.reasonForVisit}`,
+        `Insurance: ${intake.insurancePayer}, member ID ${intake.memberId}`,
+        `Accessibility needs: ${needs.join("; ") || "none specified (ask what accommodations they offer)"}`,
+        `Wants to be seen within: ${intake.urgencyWindowDays} days`,
+      ].join("\n"),
+    },
+    parseMessage,
+    () => templateMessage(clinic, intake, channel, d),
+  );
+}

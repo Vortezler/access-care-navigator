@@ -57,7 +57,9 @@ export type ChatAction =
       needs: AccessibilityKey[];
     }
   | { type: "calendar"; event: CalEventData }
-  | { type: "script"; clinicId: string; script: string };
+  | { type: "script"; clinicId: string; script: string }
+  | { type: "selfcare"; tips: string[]; warnings: string[] }
+  | { type: "message"; clinicId: string; channel: "email" | "sms"; subject: string; body: string };
 
 export interface ChatReply {
   reply: string;
@@ -143,6 +145,41 @@ const TOOLS = [
       required: ["title", "start_iso"],
     },
   },
+  {
+    name: "show_self_care",
+    description:
+      "Show a 'While you wait' card: safe at-home steps that may ease the symptoms until they're seen, plus warning signs that mean " +
+      "get help right away. Use whenever the person describes symptoms (unless it's an emergency, where you only tell them to call 911). " +
+      "Write in the person's language. Only widely accepted, low-risk measures (rest, fluids, cool or warm compress, positioning, elevation, " +
+      "a quiet dark room, over-the-counter pain or fever relievers used as directed on the label). Never give doses beyond 'as directed on the label', " +
+      "never suggest stopping prescribed medicine, and for children never suggest aspirin.",
+    input_schema: {
+      type: "object",
+      properties: {
+        tips: { type: "array", items: { type: "string" }, description: "3-6 short, specific steps" },
+        warning_signs: { type: "array", items: { type: "string" }, description: "3-5 signs that mean urgent care or 911 now" },
+      },
+      required: ["tips", "warning_signs"],
+    },
+  },
+  {
+    name: "draft_message",
+    description:
+      "Draft an email or text message from the person to a clinic's front desk (to request an appointment, ask about accessibility, " +
+      "send a question). Shows an editable draft with buttons that open it in their own email or messaging app; nothing is sent until they press send there. " +
+      "Write it in the person's language, first person, polite and confident. Use only facts the person has given; never add personal details they did not state, such as disability, diagnosis or appointment time. Email: subject + body under 200 words, signed with their name. " +
+      "Text: subject empty, body under 320 characters.",
+    input_schema: {
+      type: "object",
+      properties: {
+        clinic_id: { type: "string" },
+        channel: { type: "string", enum: ["email", "sms"] },
+        subject: { type: "string" },
+        body: { type: "string" },
+      },
+      required: ["clinic_id", "channel", "body"],
+    },
+  }
 ];
 
 const isNeed = (x: unknown): x is AccessibilityKey => typeof x === "string" && (ACCESSIBILITY_KEYS as string[]).includes(x);
@@ -294,6 +331,41 @@ function runTool(name: string, raw: unknown, ctx: ChatContext): ToolOutcome {
       };
     }
   }
+  if (name === "show_self_care") {
+    const clean = (x: unknown, max: number) =>
+      (Array.isArray(x) ? x : [])
+        .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+        .map((v) => v.trim().slice(0, 300))
+        .slice(0, max);
+    const tips = clean(input.tips, 6);
+    const warnings = clean(input.warning_signs, 5);
+    if (!tips.length || !warnings.length) return { content: "Give at least one tip and one warning sign.", isError: true };
+    return {
+      content: "The 'While you wait' card is on screen with the tips, the warning signs and a not-medical-advice note.",
+      action: { type: "selfcare", tips, warnings },
+      note: "showed self-care tips",
+    };
+  }
+
+  if (name === "draft_message") {
+    const clinic = typeof input.clinic_id === "string" ? getClinicById(input.clinic_id) : undefined;
+    if (!clinic) return { content: "No clinic with that id. Use an id from find_clinics.", isError: true };
+    const channel = input.channel === "sms" ? "sms" : "email";
+    const body = typeof input.body === "string" ? input.body.trim() : "";
+    if (body.length < 20) return { content: "The message body is empty. Write the full message.", isError: true };
+    return {
+      content: `The ${channel === "email" ? "email" : "text"} draft to ${clinic.name} is on screen, editable, with a button that opens it in their own app. Nothing has been sent.`,
+      action: {
+        type: "message",
+        clinicId: clinic.id,
+        channel,
+        subject: channel === "email" && typeof input.subject === "string" ? input.subject.trim().slice(0, 200) : "",
+        body: body.slice(0, channel === "sms" ? 640 : 4000),
+      },
+      note: `drafted ${channel} to ${clinic.id}`,
+    };
+  }
+
   return { content: `Unknown tool ${name}`, isError: true };
 }
 
@@ -331,8 +403,17 @@ What you do:
 - Book with book_appointment only at clinics with online booking, only for a slot the tool listed, and only after the person clearly says yes to that clinic and time. Bookings here are a simulation; say so briefly the first time.
 - For phone-only clinics, write a call script and show it with show_call_script.
 - Booking cards and call-script cards already include calendar buttons; point to those. Use add_to_calendar only for other events (a follow-up, a reminder on another day) when the person asks.
+- When they want to email or text a clinic, write it with draft_message. You never send anything yourself.
 
-Gather what you need one or two questions at a time: what's going on, insurance company, accessibility needs (wheelchair-accessible exam room, adjustable-height exam table, quiet waiting room, ASL interpreter, service animal), how soon, and their name before booking.
+You are not a general-purpose chatbot. You don't explain conditions at length, list possible diseases, or make small talk. Your job is to get the person seen by the right clinic and comfortable until then.
+
+When the person describes symptoms, act in this same reply. Don't ask questions first:
+1. If anything could be an emergency, say to call 911 or go to the nearest emergency room now, and stop there.
+2. Pick the best first-stop specialty yourself (Primary Care if unsure) and call find_clinics right away. Use any insurance and accessibility needs you already know, and set within_days from how urgent it sounds (1-3 for things that need care soon). Don't wait for missing details; you can search again later.
+3. Call show_self_care with safe steps for the meantime and the warning signs.
+4. Then reply in a few sentences: which clinic can see them soonest, and why it fits. End with one question that moves toward booking, such as "Want me to book Tuesday at 11?" or "What insurance do you have?".
+
+Otherwise, gather what you need one or two questions at a time: insurance company, accessibility needs (wheelchair-accessible exam room, adjustable-height exam table, quiet waiting room, ASL interpreter, service animal), how soon, and their name before booking.
 
 Documents: say in plain words what matters for booking (for example "your referral is to neurology" or "it says you use a wheelchair"). Don't interpret results beyond what the document states, and never diagnose. Confirm any accessibility needs you read from a document before using them.
 

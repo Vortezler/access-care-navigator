@@ -25,6 +25,8 @@ export interface Clinic {
   specialty: string;
   address: string;
   phone: string;
+  email: string; // fictional, on the reserved .example domain
+
   insuranceNetworks: string[];
   accessibility: AccessibilityRequirements;
   hasOnlineBooking: boolean;

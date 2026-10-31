@@ -2261,3 +2261,49 @@ fieldset.panel {
   background: #000;
   border-color: #fff;
 }
+
+/* ---------- Message drafts ---------- */
+.draft {
+  display: grid;
+  gap: 4px;
+}
+.draft__to {
+  margin: 0 0 8px;
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.draft__body {
+  min-height: 140px;
+}
+.draft .field {
+  margin-bottom: 12px;
+}
+
+/* ---------- Self-care card ---------- */
+.selfcare ul {
+  margin: 0 0 12px;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 6px;
+}
+.selfcare__warn {
+  margin: 4px 0 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(var(--bad-rgb), 0.4);
+  border-left: 3px solid var(--bad);
+  border-radius: var(--radius-sm);
+  background: var(--bad-soft);
+}
+.selfcare__warn h4 {
+  margin: 0 0 6px;
+  color: var(--bad);
+  font-size: 0.9375rem;
+}
+.selfcare__warn ul {
+  margin: 0;
+}
+:root[data-theme="contrast"] .selfcare__warn {
+  background: #000;
+  border-color: var(--bad);
+}

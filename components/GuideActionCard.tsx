@@ -8,7 +8,8 @@ import { getClinicById } from "@/lib/clinics";
 import CalendarActions from "./CalendarActions";
 import { useA11y } from "./A11yProvider";
 import { useI18n } from "./I18nProvider";
-import { Calendar, Check, Copy, Phone, Speaker } from "./Icons";
+import MessageDraft from "./MessageDraft";
+import { Calendar, Chat, Check, Copy, Phone, Speaker } from "./Icons";
 
 /** Renders what a Care Guide tool did: clinics found, a booking, a call script, a calendar event. */
 export default function GuideActionCard({ action }: { action: ChatAction }) {
@@ -92,6 +93,48 @@ export default function GuideActionCard({ action }: { action: ChatAction }) {
           event={{ title: ev.title, description: ev.description, location: ev.location, start: new Date(ev.start), end: new Date(ev.end) }}
           filename="event.ics"
           noun="event"
+        />
+      </section>
+    );
+  }
+
+  if (action.type === "selfcare") {
+    return (
+      <section className="action-card selfcare" aria-label={g.selfCareTitle}>
+        <h3 className="action-card__title">{g.selfCareTitle}</h3>
+        <ul>
+          {action.tips.map((tip) => (
+            <li key={tip}>{tip}</li>
+          ))}
+        </ul>
+        <div className="selfcare__warn">
+          <h4>{g.warningTitle}</h4>
+          <ul>
+            {action.warnings.map((w) => (
+              <li key={w}>{w}</li>
+            ))}
+          </ul>
+        </div>
+        <p className="inline-note" style={{ margin: 0 }}>
+          {g.selfCareNote}
+        </p>
+      </section>
+    );
+  }
+
+  if (action.type === "message") {
+    const target = getClinicById(action.clinicId);
+    if (!target) return null;
+    return (
+      <section className="action-card" aria-label={g.draftTitle(target.name)}>
+        <h3 className="action-card__title">
+          <Chat size={16} /> {g.draftTitle(target.name)}
+        </h3>
+        <MessageDraft
+          channel={action.channel}
+          to={action.channel === "email" ? target.email : target.phone}
+          subject={action.subject}
+          body={action.body}
         />
       </section>
     );

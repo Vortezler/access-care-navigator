@@ -1,4 +1,4 @@
-import type { Dict, ScriptArgs } from "./en";
+import type { Dict, MessageArgs, ScriptArgs } from "./en";
 
 const s = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
@@ -184,6 +184,7 @@ const es: Dict = {
     book: "Reservar una cita",
     script: "Obtener guion de llamada",
     bookInstead: "Reservar en línea",
+    message: "Escribir a la clínica",
   },
   booking: {
     title: (c: string) => `Reservar en ${c}`,
@@ -224,6 +225,34 @@ const es: Dict = {
     readingLabel: "Leyendo tu guion",
     remind: "Recuérdame llamar",
     reminderAt: (when: string) => `El recordatorio es para ${when}, cuando la mayoría de recepciones están abiertas.`,
+  },
+  msg: {
+    title: (c: string) => `Escribir a ${c}`,
+    subtitle: "Te lo redactamos. Cambia lo que quieras y envíalo desde tu propio correo o app de mensajes.",
+    email: "Correo",
+    text: "Mensaje de texto",
+    channel: "Cómo enviarlo",
+    subject: "Asunto",
+    body: "Mensaje",
+    to: (addr: string) => `Para: ${addr}`,
+    writing: "Redactando tu mensaje…",
+    ready: "Tu borrador está listo.",
+    openEmail: "Abrir en el correo",
+    openText: "Abrir en Mensajes",
+    copy: "Copiar",
+    copied: "Copiado",
+    copiedStatus: "Mensaje copiado al portapapeles.",
+    listen: "Escuchar",
+    note: "No se envía nada hasta que pulses enviar en tu propia app.",
+    demoNote: "Clínica de demostración: la dirección y el número son ficticios, así que el mensaje no llegará a una clínica real.",
+    errorTitle: "No pudimos redactar el mensaje",
+    failed: "No se pudo redactar el mensaje.",
+    tryAgain: "Intentar de nuevo",
+    source: {
+      bedrock: "Redactado por Claude en AWS Bedrock",
+      anthropic: "Redactado por Claude",
+      template: "Basado en nuestra plantilla estándar (IA no disponible)",
+    },
   },
   cal: {
     nouns: { appointment: "la cita", reminder: "el recordatorio", event: "el evento" },
@@ -361,6 +390,11 @@ const es: Dict = {
     booked: "Reservada (demostración)",
     calendarCard: "Evento de calendario",
     scriptCard: (c: string) => `Guion de llamada para ${c}`,
+    selfCareTitle: "Mientras esperas",
+    warningTitle: "Busca ayuda de inmediato si",
+    selfCareNote:
+      "Cuidados generales en casa, no consejo médico. Consulta a un farmacéutico antes de tomar un medicamento nuevo, sobre todo si tomas otros medicamentos, estás embarazada o tienes alergias.",
+    draftTitle: (c: string) => `Borrador para ${c}`,
   },
   tpl: {
     languageName: "Spanish (Español)",
@@ -397,6 +431,26 @@ Muchas gracias por su ayuda.`,
       "Algo de lo que escribiste puede ser señal de una emergencia. Llama al 911 o ve ahora a la sala de emergencias más cercana.",
     chatUnavailable:
       "Ahora mismo no puedo responder: el servicio de IA no está conectado en este servidor, así que no puedo leer documentos ni conversar. Aún puedes buscar y reservar clínicas accesibles con el formulario de la página de inicio; cada resultado tiene guion de llamada y botones de calendario.",
+    emailSubject: (name: string) => `Solicitud de cita como paciente nuevo – ${name}`,
+    email: (a: MessageArgs) => `Hola, equipo de ${a.clinic}:
+
+Me llamo ${a.name} y me gustaría pedir una primera cita de ${a.specialty.toLowerCase()}.
+
+Motivo de la consulta: ${a.reason}
+
+Mi seguro es ${a.insurance} (número de afiliado ${a.memberId}). ¿Podrían confirmar que están dentro de la red?
+
+Tengo una discapacidad y quiero asegurarme de que la visita sea accesible. ¿Podrían confirmar que tienen:
+${a.needs.length ? a.needs.map((n) => `- ${n}`).join("\n") : "- Las adaptaciones que puedan ofrecer (me gustaría saber cuáles hay)"}
+
+Si algo no está disponible, díganme qué pueden ofrecer en su lugar o anótenlo en mi expediente.
+
+Me gustaría que me atendieran en los próximos ${a.days} días. ¿Podrían responderme con sus primeros horarios disponibles?
+
+Gracias,
+${a.name}`,
+    sms: (a: MessageArgs) =>
+      `Hola, soy ${a.name}. Quisiera una primera cita de ${a.specialty.toLowerCase()} en los próximos ${a.days} días.${a.needs.length ? ` Necesitaré: ${a.needs.join(", ").toLowerCase()}.` : ""} Seguro: ${a.insurance}. ¿Me pueden escribir o llamar con horarios? ¡Gracias!`,
   },
 };
 

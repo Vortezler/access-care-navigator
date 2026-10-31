@@ -1,4 +1,4 @@
-import type { Dict, ScriptArgs } from "./en";
+import type { Dict, MessageArgs, ScriptArgs } from "./en";
 
 const vi: Dict = {
   common: { close: "Đóng", newTab: "(mở trong thẻ mới)", language: "Ngôn ngữ" },
@@ -181,6 +181,7 @@ const vi: Dict = {
     book: "Đặt lịch",
     script: "Lấy kịch bản gọi điện",
     bookInstead: "Đặt trực tuyến",
+    message: "Gửi email hoặc tin nhắn",
   },
   booking: {
     title: (c: string) => `Đặt lịch tại ${c}`,
@@ -221,6 +222,34 @@ const vi: Dict = {
     readingLabel: "Đang đọc kịch bản",
     remind: "Nhắc tôi gọi điện",
     reminderAt: (when: string) => `Lời nhắc vào ${when}, khi hầu hết quầy lễ tân đã mở cửa.`,
+  },
+  msg: {
+    title: (c: string) => `Nhắn cho ${c}`,
+    subtitle: "Chúng tôi soạn sẵn cho bạn. Sửa tùy ý rồi gửi từ ứng dụng email hoặc tin nhắn của bạn.",
+    email: "Email",
+    text: "Tin nhắn",
+    channel: "Cách gửi",
+    subject: "Tiêu đề",
+    body: "Nội dung",
+    to: (addr: string) => `Gửi tới: ${addr}`,
+    writing: "Đang soạn tin nhắn…",
+    ready: "Bản nháp đã sẵn sàng.",
+    openEmail: "Mở trong ứng dụng email",
+    openText: "Mở trong Tin nhắn",
+    copy: "Sao chép",
+    copied: "Đã sao chép",
+    copiedStatus: "Đã sao chép tin nhắn.",
+    listen: "Nghe",
+    note: "Không có gì được gửi cho đến khi bạn bấm gửi trong ứng dụng của mình.",
+    demoNote: "Phòng khám thử nghiệm: địa chỉ và số điện thoại là hư cấu, nên tin nhắn sẽ không đến phòng khám thật.",
+    errorTitle: "Không soạn được tin nhắn",
+    failed: "Không thể soạn tin nhắn.",
+    tryAgain: "Thử lại",
+    source: {
+      bedrock: "Soạn bởi Claude qua AWS Bedrock",
+      anthropic: "Soạn bởi Claude",
+      template: "Dựa trên mẫu chuẩn (AI không khả dụng)",
+    },
   },
   cal: {
     nouns: { appointment: "lịch hẹn", reminder: "lời nhắc", event: "sự kiện" },
@@ -358,6 +387,11 @@ const vi: Dict = {
     booked: "Đã đặt (thử nghiệm)",
     calendarCard: "Sự kiện lịch",
     scriptCard: (c: string) => `Kịch bản gọi ${c}`,
+    selfCareTitle: "Trong lúc chờ",
+    warningTitle: "Hãy tìm trợ giúp ngay nếu",
+    selfCareNote:
+      "Chăm sóc chung tại nhà, không phải lời khuyên y tế. Hãy hỏi dược sĩ trước khi dùng thuốc mới, nhất là khi bạn đang dùng thuốc khác, đang mang thai hoặc bị dị ứng.",
+    draftTitle: (c: string) => `Bản nháp cho ${c}`,
   },
   tpl: {
     languageName: "Vietnamese (Tiếng Việt)",
@@ -394,6 +428,26 @@ Cảm ơn anh/chị rất nhiều.`,
       "Một số điều bạn viết có thể là dấu hiệu cấp cứu. Hãy gọi 911 hoặc đến phòng cấp cứu gần nhất ngay.",
     chatUnavailable:
       "Hiện tôi không thể trả lời: dịch vụ AI chưa được kết nối trên máy chủ này nên tôi không đọc được tài liệu hay trò chuyện. Bạn vẫn có thể tìm và đặt phòng khám dễ tiếp cận bằng biểu mẫu ở trang chủ; mỗi kết quả đều có kịch bản gọi điện và nút thêm vào lịch.",
+    emailSubject: (name: string) => `Yêu cầu đặt lịch bệnh nhân mới – ${name}`,
+    email: (a: MessageArgs) => `Kính gửi đội ngũ ${a.clinic},
+
+Tôi tên là ${a.name} và muốn đặt lịch khám ${a.specialty.toLowerCase()} lần đầu.
+
+Lý do khám: ${a.reason}
+
+Bảo hiểm của tôi là ${a.insurance} (mã số thành viên ${a.memberId}). Xin xác nhận phòng khám nằm trong mạng lưới.
+
+Tôi là người khuyết tật nên muốn chắc chắn buổi khám thuận tiện cho tôi. Xin xác nhận phòng khám có:
+${a.needs.length ? a.needs.map((n) => `- ${n}`).join("\n") : "- Những hỗ trợ phòng khám có thể cung cấp (tôi muốn biết có gì)"}
+
+Nếu có mục nào không có, xin cho biết phương án thay thế hoặc ghi vào hồ sơ của tôi.
+
+Tôi mong được khám trong ${a.days} ngày tới. Xin trả lời với các giờ trống sớm nhất.
+
+Cảm ơn,
+${a.name}`,
+    sms: (a: MessageArgs) =>
+      `Xin chào, tôi là ${a.name}. Tôi muốn đặt lịch khám ${a.specialty.toLowerCase()} lần đầu trong ${a.days} ngày tới.${a.needs.length ? ` Tôi cần: ${a.needs.join(", ").toLowerCase()}.` : ""} Bảo hiểm: ${a.insurance}. Xin nhắn hoặc gọi lại cho tôi các giờ trống. Cảm ơn!`,
   },
 };
 

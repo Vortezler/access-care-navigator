@@ -1,4 +1,4 @@
-import type { Dict, ScriptArgs } from "./en";
+import type { Dict, MessageArgs, ScriptArgs } from "./en";
 
 const s = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
@@ -185,6 +185,7 @@ const fr: Dict = {
     book: "Réserver un créneau",
     script: "Obtenir un script d’appel",
     bookInstead: "Réserver en ligne",
+    message: "Écrire à la clinique",
   },
   booking: {
     title: (c: string) => `Réserver chez ${c}`,
@@ -225,6 +226,34 @@ const fr: Dict = {
     readingLabel: "Lecture de votre script",
     remind: "Me rappeler d’appeler",
     reminderAt: (when: string) => `Le rappel est prévu ${when}, quand la plupart des accueils sont ouverts.`,
+  },
+  msg: {
+    title: (c: string) => `Écrire à ${c}`,
+    subtitle: "Nous le rédigeons pour vous. Modifiez ce que vous voulez, puis envoyez-le depuis votre propre messagerie.",
+    email: "E-mail",
+    text: "SMS",
+    channel: "Moyen d’envoi",
+    subject: "Objet",
+    body: "Message",
+    to: (addr: string) => `À : ${addr}`,
+    writing: "Rédaction de votre message…",
+    ready: "Votre brouillon est prêt.",
+    openEmail: "Ouvrir dans la messagerie",
+    openText: "Ouvrir dans Messages",
+    copy: "Copier",
+    copied: "Copié",
+    copiedStatus: "Message copié dans le presse-papiers.",
+    listen: "Écouter",
+    note: "Rien n’est envoyé tant que vous n’appuyez pas sur Envoyer dans votre propre application.",
+    demoNote: "Clinique de démonstration : l’adresse et le numéro sont fictifs, le message n’atteindra donc aucune vraie clinique.",
+    errorTitle: "Impossible de rédiger le message",
+    failed: "Impossible de rédiger le message.",
+    tryAgain: "Réessayer",
+    source: {
+      bedrock: "Rédigé par Claude via AWS Bedrock",
+      anthropic: "Rédigé par Claude",
+      template: "Basé sur notre modèle standard (IA indisponible)",
+    },
   },
   cal: {
     nouns: { appointment: "le rendez-vous", reminder: "le rappel", event: "l’événement" },
@@ -362,6 +391,11 @@ const fr: Dict = {
     booked: "Réservé (démo)",
     calendarCard: "Événement d’agenda",
     scriptCard: (c: string) => `Script d’appel pour ${c}`,
+    selfCareTitle: "En attendant",
+    warningTitle: "Demandez de l’aide immédiatement si",
+    selfCareNote:
+      "Conseils généraux à domicile, pas un avis médical. Demandez à un pharmacien avant de prendre un nouveau médicament, surtout si vous prenez d’autres médicaments, êtes enceinte ou avez des allergies.",
+    draftTitle: (c: string) => `Brouillon pour ${c}`,
   },
   tpl: {
     languageName: "French (Français)",
@@ -398,6 +432,26 @@ Merci beaucoup pour votre aide.`,
       "Certains éléments que vous avez écrits peuvent signaler une urgence. Appelez le 911 ou rendez-vous aux urgences les plus proches maintenant.",
     chatUnavailable:
       "Je ne peux pas répondre pour le moment : le service d’IA n’est pas connecté sur ce serveur, je ne peux donc ni lire de documents ni discuter. Vous pouvez toujours trouver et réserver une clinique accessible avec le formulaire de la page d’accueil ; chaque résultat propose un script d’appel et des boutons d’agenda.",
+    emailSubject: (name: string) => `Demande de rendez-vous nouveau patient – ${name}`,
+    email: (a: MessageArgs) => `Bonjour à l’équipe de ${a.clinic},
+
+Je m’appelle ${a.name} et je souhaite prendre un premier rendez-vous en ${a.specialty.toLowerCase()}.
+
+Motif de la consultation : ${a.reason}
+
+Mon assurance est ${a.insurance} (numéro d’adhérent ${a.memberId}). Pouvez-vous confirmer que vous êtes dans le réseau ?
+
+J’ai un handicap et je souhaite m’assurer que la consultation sera accessible. Pouvez-vous confirmer que vous disposez de :
+${a.needs.length ? a.needs.map((n) => `- ${n}`).join("\n") : "- Les aménagements que vous pouvez proposer (j’aimerais savoir lesquels)"}
+
+Si un élément n’est pas disponible, dites-moi ce que vous pouvez prévoir à la place ou notez-le dans mon dossier.
+
+J’aimerais être vu(e) dans les ${a.days} prochains jours. Pourriez-vous me répondre avec vos premiers créneaux disponibles ?
+
+Merci,
+${a.name}`,
+    sms: (a: MessageArgs) =>
+      `Bonjour, ici ${a.name}. Je souhaite un premier rendez-vous en ${a.specialty.toLowerCase()} d’ici ${a.days} jours.${a.needs.length ? ` J’aurai besoin de : ${a.needs.join(", ").toLowerCase()}.` : ""} Assurance : ${a.insurance}. Pouvez-vous me répondre par SMS ou m’appeler avec des créneaux ? Merci !`,
   },
 };
 

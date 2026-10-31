@@ -9,6 +9,7 @@ import ClinicCard from "@/components/ClinicCard";
 import { useT } from "@/components/I18nProvider";
 import BookingModal from "@/components/BookingModal";
 import AdvocacyScriptModal from "@/components/AdvocacyScriptModal";
+import MessageModal from "@/components/MessageModal";
 import { ArrowLeft, MoonMark } from "@/components/Icons";
 
 export default function ResultsPage() {
@@ -20,6 +21,8 @@ export default function ResultsPage() {
   const [bookOpen, setBookOpen] = useState(false);
   const [scriptClinic, setScriptClinic] = useState<Clinic | null>(null);
   const [scriptOpen, setScriptOpen] = useState(false);
+  const [msgClinic, setMsgClinic] = useState<Clinic | null>(null);
+  const [msgOpen, setMsgOpen] = useState(false);
 
   useEffect(() => {
     setSession(loadSession());
@@ -97,6 +100,10 @@ export default function ResultsPage() {
                 setBookClinic(r.clinic);
                 setBookOpen(true);
               }}
+              onMessage={() => {
+                setMsgClinic(r.clinic);
+                setMsgOpen(true);
+              }}
               onScript={() => {
                 setScriptClinic(r.clinic);
                 setScriptOpen(true);
@@ -113,6 +120,7 @@ export default function ResultsPage() {
         intake={intake}
       />
       <AdvocacyScriptModal clinic={scriptClinic} intake={intake} open={scriptOpen} onClose={() => setScriptOpen(false)} />
+      <MessageModal clinic={msgClinic} intake={intake} open={msgOpen} onClose={() => setMsgOpen(false)} />
     </div>
   );
 }

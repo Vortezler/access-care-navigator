@@ -14,6 +14,10 @@ export interface ScriptArgs {
   days: number;
 }
 
+export interface MessageArgs extends ScriptArgs {
+  clinic: string;
+}
+
 const en = {
   common: {
     close: "Close",
@@ -201,6 +205,7 @@ const en = {
     book: "Book a slot",
     script: "Get call script",
     bookInstead: "Book online instead",
+    message: "Email or text clinic",
   },
   booking: {
     title: (c: string) => `Book at ${c}`,
@@ -241,6 +246,34 @@ const en = {
     readingLabel: "Reading your script",
     remind: "Remind me to call",
     reminderAt: (when: string) => `The reminder is for ${when}, when most front desks are open.`,
+  },
+  msg: {
+    title: (c: string) => `Message ${c}`,
+    subtitle: "We’ll draft it for you. Edit anything, then send it from your own email or messaging app.",
+    email: "Email",
+    text: "Text message",
+    channel: "How to send",
+    subject: "Subject",
+    body: "Message",
+    to: (addr: string) => `To: ${addr}`,
+    writing: "Writing your message…",
+    ready: "Your draft is ready.",
+    openEmail: "Open in email app",
+    openText: "Open in Messages",
+    copy: "Copy",
+    copied: "Copied",
+    copiedStatus: "Message copied to clipboard.",
+    listen: "Listen",
+    note: "Nothing is sent until you press send in your own app.",
+    demoNote: "Demo clinic: the address and number are fictional, so the message won’t reach a real clinic.",
+    errorTitle: "We couldn’t draft the message",
+    failed: "Couldn't draft a message.",
+    tryAgain: "Try again",
+    source: {
+      bedrock: "Drafted by Claude via AWS Bedrock",
+      anthropic: "Drafted by Claude",
+      template: "Built from our standard template (AI unavailable)",
+    },
   },
   cal: {
     nouns: { appointment: "appointment", reminder: "reminder", event: "event" },
@@ -378,6 +411,11 @@ const en = {
     booked: "Booked (demo)",
     calendarCard: "Calendar event",
     scriptCard: (c: string) => `Call script for ${c}`,
+    selfCareTitle: "While you wait",
+    warningTitle: "Get help right away if",
+    selfCareNote:
+      "General self-care, not medical advice. Ask a pharmacist before taking any new medicine, especially if you take other medicines, are pregnant or have allergies.",
+    draftTitle: (c: string) => `Draft for ${c}`,
   },
   // Text the server uses when no AI is available (and to tell the AI which language to write in)
   tpl: {
@@ -415,6 +453,26 @@ Thank you so much for your help.`,
       "Some of what you wrote can be a sign of an emergency. Call 911 or go to the nearest emergency room now.",
     chatUnavailable:
       "I can't think right now — the AI service isn't connected on this server, so I can't read documents or chat. You can still find and book accessible clinics with the form on the home page, and every result has a call script and calendar buttons.",
+    emailSubject: (name: string) => `New-patient appointment request – ${name}`,
+    email: (a: MessageArgs) => `Hello ${a.clinic} team,
+
+My name is ${a.name}, and I'd like to book a new-patient ${a.specialty.toLowerCase()} appointment.
+
+Reason for the visit: ${a.reason}
+
+My insurance is ${a.insurance} (member ID ${a.memberId}). Could you confirm you're in-network?
+
+I have a disability, so I'd like to make sure the visit is accessible. Could you confirm you have:
+${a.needs.length ? a.needs.map((n) => `- ${n}`).join("\n") : "- Any accommodations you can offer (I'd like to know what's available)"}
+
+If something isn't available, please let me know what you can arrange instead, or note it in my file.
+
+I'm hoping to be seen within the next ${a.days} days. Could you reply with your earliest available times?
+
+Thank you,
+${a.name}`,
+    sms: (a: MessageArgs) =>
+      `Hi, this is ${a.name}. I'd like a new-patient ${a.specialty.toLowerCase()} appointment within ${a.days} days.${a.needs.length ? ` I'll need: ${a.needs.join(", ").toLowerCase()}.` : ""} Insurance: ${a.insurance}. Could you text or call me back with times? Thank you!`,
   },
 };
 

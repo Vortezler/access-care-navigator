@@ -5,6 +5,7 @@
     "specialty": "Neurology",
     "address": "1420 Lakeshore Drive, Suite 300, Port Juniper, OR 97401",
     "phone": "(503) 555-0142",
+    "email": "frontdesk@neuro-lakeshore.example",
     "insuranceNetworks": [
       "Aetna",
       "Blue Cross Blue Shield",
@@ -30,6 +31,7 @@
     "specialty": "Neurology",
     "address": "88 Cedar Hollow Road, Port Juniper, OR 97403",
     "phone": "(503) 555-0178",
+    "email": "frontdesk@neuro-cedar.example",
     "insuranceNetworks": [
       "UnitedHealthcare",
       "Cigna",
@@ -55,6 +57,7 @@
     "specialty": "Neurology",
     "address": "3100 Riverside Parkway, Building B, Port Juniper, OR 97405",
     "phone": "(503) 555-0119",
+    "email": "frontdesk@neuro-riverside.example",
     "insuranceNetworks": [
       "Aetna",
       "Humana",
@@ -79,6 +82,7 @@
     "specialty": "Cardiology",
     "address": "500 Harborview Boulevard, Floor 4, Port Juniper, OR 97401",
     "phone": "(503) 555-0163",
+    "email": "frontdesk@cardio-harborview.example",
     "insuranceNetworks": [
       "Aetna",
       "UnitedHealthcare",
@@ -104,6 +108,7 @@
     "specialty": "Cardiology",
     "address": "212 Maple Street, Port Juniper, OR 97402",
     "phone": "(503) 555-0137",
+    "email": "frontdesk@cardio-maple.example",
     "insuranceNetworks": [
       "Blue Cross Blue Shield",
       "Cigna",
@@ -128,6 +133,7 @@
     "specialty": "Dermatology",
     "address": "47 Willowbrook Lane, Suite 12, Port Juniper, OR 97404",
     "phone": "(503) 555-0150",
+    "email": "frontdesk@derm-willowbrook.example",
     "insuranceNetworks": [
       "Aetna",
       "Blue Cross Blue Shield",
@@ -152,6 +158,7 @@
     "specialty": "Orthopedics",
     "address": "9 Summit Ridge Court, Port Juniper, OR 97406",
     "phone": "(503) 555-0191",
+    "email": "frontdesk@ortho-summit.example",
     "insuranceNetworks": [
       "UnitedHealthcare",
       "Blue Cross Blue Shield",
@@ -179,6 +186,7 @@
     "specialty": "Orthopedics",
     "address": "1650 Northgate Avenue, Port Juniper, OR 97408",
     "phone": "(503) 555-0124",
+    "email": "frontdesk@ortho-northgate.example",
     "insuranceNetworks": [
       "Medicaid",
       "Medicare",
@@ -203,6 +211,7 @@
     "specialty": "Psychiatry",
     "address": "730 Lantern Way, Suite 2, Port Juniper, OR 97401",
     "phone": "(503) 555-0185",
+    "email": "frontdesk@psych-quietharbor.example",
     "insuranceNetworks": [
       "Aetna",
       "Cigna",
@@ -228,6 +237,7 @@
     "specialty": "Primary Care",
     "address": "2280 Elm Grove Road, Port Juniper, OR 97402",
     "phone": "(503) 555-0106",
+    "email": "frontdesk@pc-elmgrove.example",
     "insuranceNetworks": [
       "Blue Cross Blue Shield",
       "UnitedHealthcare",
@@ -255,6 +265,7 @@
     "specialty": "Primary Care",
     "address": "15 Market Street, Port Juniper, OR 97407",
     "phone": "(503) 555-0155",
+    "email": "frontdesk@pc-southside.example",
     "insuranceNetworks": [
       "Medicaid",
       "Medicare",
@@ -279,6 +290,7 @@
     "specialty": "OB/GYN",
     "address": "640 Bayview Terrace, Suite 410, Port Juniper, OR 97401",
     "phone": "(503) 555-0170",
+    "email": "frontdesk@obgyn-bayview.example",
     "insuranceNetworks": [
       "Aetna",
       "Blue Cross Blue Shield",
@@ -305,6 +317,7 @@
     "specialty": "Pediatrics",
     "address": "301 Orchard Hill Drive, Port Juniper, OR 97405",
     "phone": "(503) 555-0133",
+    "email": "frontdesk@peds-littlelanterns.example",
     "insuranceNetworks": [
       "Medicaid",
       "Blue Cross Blue Shield",
@@ -329,6 +342,7 @@
     "specialty": "ENT",
     "address": "1205 Clearwater Avenue, Floor 2, Port Juniper, OR 97403",
     "phone": "(503) 555-0147",
+    "email": "frontdesk@ent-clearwater.example",
     "insuranceNetworks": [
       "UnitedHealthcare",
       "Aetna",
@@ -353,6 +367,7 @@
     "specialty": "Physical Therapy",
     "address": "77 Hilltop Circle, Port Juniper, OR 97406",
     "phone": "(503) 555-0112",
+    "email": "frontdesk@pt-hilltop.example",
     "insuranceNetworks": [
       "Blue Cross Blue Shield",
       "Medicare",

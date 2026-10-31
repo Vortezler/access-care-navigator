@@ -24,6 +24,16 @@ A conversational assistant for people who'd rather talk it through than fill in 
 - **Context without accounts.** The conversation stays in the browser tab and is re-sent each turn. Each reply carries a short note of what its tools returned (clinic ids, slots, confirmations), so later turns still know about them. If you've used the search form, the guide already knows your name, insurance and needs.
 - **Same safety rules.** It's not a doctor, it never diagnoses, it suggests a general physician when unsure, and emergencies get a call-911 answer first. With no AI configured, it says so plainly in your language and points you to the form.
 
+### Email and text drafts for clinics
+
+Choose **Email or text clinic** on a results card, or ask the Care Guide to draft a message. Review and edit the subject and body, copy the text, or listen to it aloud. Opening your email or messaging app carries over your edits; you press Send there. Clinic addresses use the reserved .example domain and the directory is fictional. All six languages include template drafts when AI is unavailable.
+
+The Care Guide uses draft_message to display the same editable card. It is instructed to use only personal facts you supplied.
+
+### Symptoms-first Care Guide
+
+Describe symptoms to get clinic matches and a **While you wait** card through show_self_care, with practical self-care tips and warning signs. The guide can search before asking for insurance, then asks a booking question. Emergency symptoms receive emergency guidance first. Self-care is not a diagnosis or a substitute for professional care.
+
 ### Six languages, end to end
 
 **English, Español, 中文 (Mandarin, Simplified), Tiếng Việt, Français, हिन्दी.** Use the header picker or the Display panel. The first visit follows the browser's language, and your choice is remembered in the browser.
