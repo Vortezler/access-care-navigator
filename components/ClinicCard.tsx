@@ -1,0 +1,187 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import type { IntakeData, MatchResult, TextSource } from "@/lib/types";
+import { ACCESSIBILITY_KEYS, ACCESSIBILITY_LABELS } from "@/lib/types";
+import { Calendar, Check, Cross, Phone, Sparkle } from "./Icons";
+
+interface Props {
+  result: MatchResult;
+  index: number;
+  intake: IntakeData;
+  onBook: () => void;
+  onScript: () => void;
+}
+
+const R = 34;
+const CIRC = 2 * Math.PI * R;
+
+const SOURCE_LABEL: Record<TextSource, string> = {
+  bedrock: "AI summary · Claude on AWS Bedrock",
+  anthropic: "AI summary · Claude",
+  template: "Summary",
+};
+
+function ScoreRing({ score, delay }: { score: number; delay: number }) {
+  // Starts empty, then fills to the score once mounted — the ring "settles" into place.
+  const [offset, setOffset] = useState(CIRC);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setOffset(CIRC * (1 - score / 100)));
+    return () => cancelAnimationFrame(id);
+  }, [score]);
+
+  return (
+    <div className="score" role="img" aria-label={`Match score ${score} out of 100`}>
+      <svg viewBox="0 0 80 80" aria-hidden>
+        <circle className="score__track" cx="40" cy="40" r={R} fill="none" strokeWidth="6" />
+        <circle
+          className="score__value"
+          cx="40"
+          cy="40"
+          r={R}
+          fill="none"
+          strokeWidth="6"
+          strokeDasharray={CIRC}
+          strokeDashoffset={offset}
+          style={{ transitionDelay: `${delay}ms` }}
+        />
+      </svg>
+      <div className="score__label" aria-hidden>
+        <div>
+          <span className="score__num">{score}</span>
+          <span className="score__unit">match</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function ClinicCard({ result, index, intake, onBook, onScript }: Props) {
+  const { clinic } = result;
+  const requested = ACCESSIBILITY_KEYS.filter((k) => intake.accessibilityRequirements[k]);
+  const extras = ACCESSIBILITY_KEYS.filter((k) => !intake.accessibilityRequirements[k] && clinic.accessibility[k]);
+  const prefersBooking = intake.autonomyMode === "auto_book_preferred";
+  const headingId = `clinic-${clinic.id}`;
+
+  const bookBtn = (primary: boolean, label: string) => (
+    <button type="button" className={`btn ${primary ? "btn--primary" : "btn--secondary"}`} onClick={onBook} aria-describedby={headingId}>
+      <Calendar />
+      {label}
+    </button>
+  );
+  const scriptBtn = (primary: boolean) => (
+    <button type="button" className={`btn ${primary ? "btn--primary" : "btn--secondary"}`} onClick={onScript} aria-describedby={headingId}>
+      <Phone />
+      Get call script
+    </button>
+  );
+
+  return (
+    <li>
+      <article
+        className={`panel clinic reveal${index === 0 ? " clinic--top" : ""}`}
+        style={{ ["--i" as string]: Math.min(index + 2, 8) }}
+        aria-labelledby={headingId}
+      >
+        <div className="clinic__head">
+          <p className="clinic__rank">{index === 0 ? "Best match" : `#${index + 1}`}</p>
+          <h2 className="clinic__name" id={headingId}>
+            {clinic.name}
+          </h2>
+          <p className="clinic__meta">
+            {clinic.address}
+            <br />
+            <a href={`tel:${clinic.phone.replace(/[^\d+]/g, "")}`}>{clinic.phone}</a>
+          </p>
+          <div className="badges">
+            {result.inNetwork ? (
+              <span className="badge badge--ok">
+                <Check size={12} /> In-network
+              </span>
+            ) : (
+              <span className="badge badge--warn">
+                <Cross size={10} /> Out-of-network — verify
+              </span>
+            )}
+            {clinic.hasOnlineBooking ? (
+              <span className="badge badge--accent">Online booking</span>
+            ) : (
+              <span className="badge">Phone booking only</span>
+            )}
+            <span className={`badge${result.slotsInWindow ? "" : " badge--warn"}`}>
+              {result.slotsInWindow
+                ? `${result.slotsInWindow} opening${result.slotsInWindow === 1 ? "" : "s"} in ${intake.urgencyWindowDays} days`
+                : `No openings in ${intake.urgencyWindowDays} days`}
+            </span>
+          </div>
+        </div>
+
+        <ScoreRing score={result.score} delay={160 + index * 90} />
+
+        <div className="clinic__body">
+          <section aria-label="Accessibility check">
+            <h3 className="clinic__subhead">
+              Your needs · {result.requirementsMetCount} of {result.requirementsTotalCount} met
+            </h3>
+            {requested.length === 0 ? (
+              <p className="muted" style={{ margin: 0, fontSize: "0.9375rem" }}>
+                You didn&rsquo;t select specific needs.
+              </p>
+            ) : (
+              <ul className="checklist">
+                {requested.map((k) => {
+                  const met = clinic.accessibility[k];
+                  return (
+                    <li key={k}>
+                      <span className={`checklist__icon checklist__icon--${met ? "met" : "unmet"}`} aria-hidden>
+                        {met ? <Check size={12} /> : <Cross size={10} />}
+                      </span>
+                      <span>
+                        <span className={`checklist__state checklist__state--${met ? "met" : "unmet"}`}>
+                          {met ? "Yes" : "No"}
+                        </span>
+                        <span className="visually-hidden">:</span> {ACCESSIBILITY_LABELS[k]}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {extras.length > 0 && (
+              <p className="muted" style={{ margin: "12px 0 0", fontSize: "0.875rem" }}>
+                Also offers: {extras.map((k) => ACCESSIBILITY_LABELS[k].toLowerCase()).join(", ")}.
+              </p>
+            )}
+          </section>
+
+          <section aria-label="Why this clinic">
+            <h3 className="clinic__subhead">Why this clinic</h3>
+            <p className="clinic__explanation">{result.explanation}</p>
+            <p className="source-tag">
+              {result.explanationSource !== "template" && <Sparkle />}
+              {SOURCE_LABEL[result.explanationSource]}
+            </p>
+          </section>
+        </div>
+
+        <div className="clinic__actions">
+          {clinic.hasOnlineBooking ? (
+            prefersBooking ? (
+              <>
+                {bookBtn(true, "Book a slot")}
+                {scriptBtn(false)}
+              </>
+            ) : (
+              <>
+                {scriptBtn(true)}
+                {bookBtn(false, "Book online instead")}
+              </>
+            )
+          ) : (
+            scriptBtn(true)
+          )}
+        </div>
+      </article>
+    </li>
+  );
+}

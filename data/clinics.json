@@ -1,0 +1,377 @@
+[
+  {
+    "id": "neuro-lakeshore",
+    "name": "Lakeshore Neurology Associates",
+    "specialty": "Neurology",
+    "address": "1420 Lakeshore Drive, Suite 300, Port Juniper, OR 97401",
+    "phone": "(503) 555-0142",
+    "insuranceNetworks": [
+      "Aetna",
+      "Blue Cross Blue Shield",
+      "Medicare"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": true,
+      "sensoryQuietWaitingRoom": true,
+      "aslInterpreterRequired": true,
+      "serviceAnimalFriendly": true
+    },
+    "hasOnlineBooking": true,
+    "openSlots": [
+      "2026-11-04T16:00:00Z",
+      "2026-11-07T18:30:00Z",
+      "2026-11-13T15:00:00Z"
+    ]
+  },
+  {
+    "id": "neuro-cedar",
+    "name": "Cedar Hollow Neurology Clinic",
+    "specialty": "Neurology",
+    "address": "88 Cedar Hollow Road, Port Juniper, OR 97403",
+    "phone": "(503) 555-0178",
+    "insuranceNetworks": [
+      "UnitedHealthcare",
+      "Cigna",
+      "Medicaid",
+      "Blue Cross Blue Shield"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": true,
+      "sensoryQuietWaitingRoom": false,
+      "aslInterpreterRequired": true,
+      "serviceAnimalFriendly": true
+    },
+    "hasOnlineBooking": false,
+    "openSlots": [
+      "2026-11-03T17:00:00Z",
+      "2026-11-10T20:00:00Z"
+    ]
+  },
+  {
+    "id": "neuro-riverside",
+    "name": "Riverside Brain & Spine",
+    "specialty": "Neurology",
+    "address": "3100 Riverside Parkway, Building B, Port Juniper, OR 97405",
+    "phone": "(503) 555-0119",
+    "insuranceNetworks": [
+      "Aetna",
+      "Humana",
+      "Kaiser Permanente"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": false,
+      "sensoryQuietWaitingRoom": true,
+      "aslInterpreterRequired": false,
+      "serviceAnimalFriendly": true
+    },
+    "hasOnlineBooking": true,
+    "openSlots": [
+      "2026-11-21T16:00:00Z",
+      "2026-11-26T21:00:00Z"
+    ]
+  },
+  {
+    "id": "cardio-harborview",
+    "name": "Harborview Heart Center",
+    "specialty": "Cardiology",
+    "address": "500 Harborview Boulevard, Floor 4, Port Juniper, OR 97401",
+    "phone": "(503) 555-0163",
+    "insuranceNetworks": [
+      "Aetna",
+      "UnitedHealthcare",
+      "Medicare"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": true,
+      "sensoryQuietWaitingRoom": false,
+      "aslInterpreterRequired": true,
+      "serviceAnimalFriendly": true
+    },
+    "hasOnlineBooking": true,
+    "openSlots": [
+      "2026-11-05T15:30:00Z",
+      "2026-11-09T17:00:00Z",
+      "2026-11-16T19:00:00Z"
+    ]
+  },
+  {
+    "id": "cardio-maple",
+    "name": "Maple Street Cardiology",
+    "specialty": "Cardiology",
+    "address": "212 Maple Street, Port Juniper, OR 97402",
+    "phone": "(503) 555-0137",
+    "insuranceNetworks": [
+      "Blue Cross Blue Shield",
+      "Cigna",
+      "Medicaid"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": false,
+      "sensoryQuietWaitingRoom": true,
+      "aslInterpreterRequired": false,
+      "serviceAnimalFriendly": true
+    },
+    "hasOnlineBooking": false,
+    "openSlots": [
+      "2026-11-06T16:00:00Z",
+      "2026-11-19T18:00:00Z"
+    ]
+  },
+  {
+    "id": "derm-willowbrook",
+    "name": "Willowbrook Dermatology",
+    "specialty": "Dermatology",
+    "address": "47 Willowbrook Lane, Suite 12, Port Juniper, OR 97404",
+    "phone": "(503) 555-0150",
+    "insuranceNetworks": [
+      "Aetna",
+      "Blue Cross Blue Shield",
+      "Cigna"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": true,
+      "sensoryQuietWaitingRoom": true,
+      "aslInterpreterRequired": true,
+      "serviceAnimalFriendly": false
+    },
+    "hasOnlineBooking": false,
+    "openSlots": [
+      "2026-11-08T17:30:00Z",
+      "2026-11-12T20:00:00Z"
+    ]
+  },
+  {
+    "id": "ortho-summit",
+    "name": "Summit Orthopedic & Sports Medicine",
+    "specialty": "Orthopedics",
+    "address": "9 Summit Ridge Court, Port Juniper, OR 97406",
+    "phone": "(503) 555-0191",
+    "insuranceNetworks": [
+      "UnitedHealthcare",
+      "Blue Cross Blue Shield",
+      "Humana",
+      "Medicare"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": true,
+      "sensoryQuietWaitingRoom": false,
+      "aslInterpreterRequired": false,
+      "serviceAnimalFriendly": true
+    },
+    "hasOnlineBooking": true,
+    "openSlots": [
+      "2026-11-03T15:00:00Z",
+      "2026-11-06T18:00:00Z",
+      "2026-11-11T16:30:00Z",
+      "2026-11-17T21:00:00Z"
+    ]
+  },
+  {
+    "id": "ortho-northgate",
+    "name": "Northgate Bone & Joint",
+    "specialty": "Orthopedics",
+    "address": "1650 Northgate Avenue, Port Juniper, OR 97408",
+    "phone": "(503) 555-0124",
+    "insuranceNetworks": [
+      "Medicaid",
+      "Medicare",
+      "Aetna"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": true,
+      "sensoryQuietWaitingRoom": true,
+      "aslInterpreterRequired": true,
+      "serviceAnimalFriendly": true
+    },
+    "hasOnlineBooking": false,
+    "openSlots": [
+      "2026-11-14T17:00:00Z",
+      "2026-11-22T15:30:00Z"
+    ]
+  },
+  {
+    "id": "psych-quietharbor",
+    "name": "Quiet Harbor Behavioral Health",
+    "specialty": "Psychiatry",
+    "address": "730 Lantern Way, Suite 2, Port Juniper, OR 97401",
+    "phone": "(503) 555-0185",
+    "insuranceNetworks": [
+      "Aetna",
+      "Cigna",
+      "Kaiser Permanente",
+      "Medicaid"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": false,
+      "sensoryQuietWaitingRoom": true,
+      "aslInterpreterRequired": true,
+      "serviceAnimalFriendly": true
+    },
+    "hasOnlineBooking": true,
+    "openSlots": [
+      "2026-11-04T22:00:00Z",
+      "2026-11-11T19:00:00Z"
+    ]
+  },
+  {
+    "id": "pc-elmgrove",
+    "name": "Elm Grove Family Medicine",
+    "specialty": "Primary Care",
+    "address": "2280 Elm Grove Road, Port Juniper, OR 97402",
+    "phone": "(503) 555-0106",
+    "insuranceNetworks": [
+      "Blue Cross Blue Shield",
+      "UnitedHealthcare",
+      "Aetna",
+      "Medicaid",
+      "Medicare"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": true,
+      "sensoryQuietWaitingRoom": true,
+      "aslInterpreterRequired": false,
+      "serviceAnimalFriendly": true
+    },
+    "hasOnlineBooking": true,
+    "openSlots": [
+      "2026-11-02T16:00:00Z",
+      "2026-11-03T20:30:00Z",
+      "2026-11-07T15:00:00Z"
+    ]
+  },
+  {
+    "id": "pc-southside",
+    "name": "Southside Community Health Clinic",
+    "specialty": "Primary Care",
+    "address": "15 Market Street, Port Juniper, OR 97407",
+    "phone": "(503) 555-0155",
+    "insuranceNetworks": [
+      "Medicaid",
+      "Medicare",
+      "Humana"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": true,
+      "sensoryQuietWaitingRoom": false,
+      "aslInterpreterRequired": true,
+      "serviceAnimalFriendly": true
+    },
+    "hasOnlineBooking": false,
+    "openSlots": [
+      "2026-11-05T17:00:00Z",
+      "2026-11-08T21:00:00Z"
+    ]
+  },
+  {
+    "id": "obgyn-bayview",
+    "name": "Bayview Women’s Health",
+    "specialty": "OB/GYN",
+    "address": "640 Bayview Terrace, Suite 410, Port Juniper, OR 97401",
+    "phone": "(503) 555-0170",
+    "insuranceNetworks": [
+      "Aetna",
+      "Blue Cross Blue Shield",
+      "UnitedHealthcare",
+      "Cigna"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": true,
+      "sensoryQuietWaitingRoom": true,
+      "aslInterpreterRequired": true,
+      "serviceAnimalFriendly": false
+    },
+    "hasOnlineBooking": true,
+    "openSlots": [
+      "2026-11-07T16:30:00Z",
+      "2026-11-15T18:00:00Z",
+      "2026-11-20T15:00:00Z"
+    ]
+  },
+  {
+    "id": "peds-littlelanterns",
+    "name": "Little Lanterns Pediatrics",
+    "specialty": "Pediatrics",
+    "address": "301 Orchard Hill Drive, Port Juniper, OR 97405",
+    "phone": "(503) 555-0133",
+    "insuranceNetworks": [
+      "Medicaid",
+      "Blue Cross Blue Shield",
+      "Kaiser Permanente"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": false,
+      "sensoryQuietWaitingRoom": true,
+      "aslInterpreterRequired": true,
+      "serviceAnimalFriendly": true
+    },
+    "hasOnlineBooking": false,
+    "openSlots": [
+      "2026-11-04T17:30:00Z",
+      "2026-11-09T16:00:00Z"
+    ]
+  },
+  {
+    "id": "ent-clearwater",
+    "name": "Clearwater Ear, Nose & Throat",
+    "specialty": "ENT",
+    "address": "1205 Clearwater Avenue, Floor 2, Port Juniper, OR 97403",
+    "phone": "(503) 555-0147",
+    "insuranceNetworks": [
+      "UnitedHealthcare",
+      "Aetna",
+      "Humana"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": false,
+      "adjustableHeightExamTable": false,
+      "sensoryQuietWaitingRoom": false,
+      "aslInterpreterRequired": true,
+      "serviceAnimalFriendly": true
+    },
+    "hasOnlineBooking": true,
+    "openSlots": [
+      "2026-11-10T19:00:00Z",
+      "2026-11-18T16:00:00Z"
+    ]
+  },
+  {
+    "id": "pt-hilltop",
+    "name": "Hilltop Physical Therapy & Rehab",
+    "specialty": "Physical Therapy",
+    "address": "77 Hilltop Circle, Port Juniper, OR 97406",
+    "phone": "(503) 555-0112",
+    "insuranceNetworks": [
+      "Blue Cross Blue Shield",
+      "Medicare",
+      "Cigna",
+      "UnitedHealthcare"
+    ],
+    "accessibility": {
+      "wheelchairAccessibleExamRoom": true,
+      "adjustableHeightExamTable": true,
+      "sensoryQuietWaitingRoom": true,
+      "aslInterpreterRequired": false,
+      "serviceAnimalFriendly": true
+    },
+    "hasOnlineBooking": true,
+    "openSlots": [
+      "2026-11-02T15:00:00Z",
+      "2026-11-05T18:30:00Z",
+      "2026-11-09T16:00:00Z",
+      "2026-11-13T20:00:00Z"
+    ]
+  }
+]
