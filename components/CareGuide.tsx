@@ -60,6 +60,9 @@ export default function CareGuide() {
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [recSupported, setRecSupported] = useState(false);
 
+  const speaking = useRef(false);
+  const spokenReply = useRef("");
+  const request = useRef<AbortController | null>(null);
   const nextId = useRef(1);
   const messagesRef = useRef<Msg[]>([]);
   messagesRef.current = messages;
@@ -78,6 +81,8 @@ export default function CareGuide() {
     return () => {
       voiceOn.current = false;
       rec.current?.abort();
+      request.current?.abort();
+      window.speechSynthesis?.cancel();
     };
   }, []);
 
@@ -94,9 +99,13 @@ export default function CareGuide() {
 
   const speakReply = useCallback(
     (text: string) => {
+      speaking.current = true;
+      spokenReply.current = text;
+      listenRef.current();
       setVoice("speaking");
       readText(text, g.voiceSpeaking, () => {
-        if (voiceOn.current) listenRef.current();
+        speaking.current = false;
+        if (voiceOn.current) setVoice("listening");
         else setVoice("off");
       });
     },
@@ -106,10 +115,16 @@ export default function CareGuide() {
   const send = useCallback(
     async (text: string, attach: Doc[] = []) => {
       const clean = text.trim();
-      if ((!clean && !attach.length) || busy) return;
+      if (!clean && !attach.length) return;
+      request.current?.abort();
+      const controller = new AbortController();
+      request.current = controller;
+      speaking.current = false;
+      stopSpeaking();
       setError(null);
       const userMsg: Msg = { id: nextId.current++, role: "user", text: clean, docs: attach };
       const history = [...messagesRef.current, userMsg];
+      messagesRef.current = history;
       setMessages(history);
       setInput("");
       setDocs([]);
@@ -118,6 +133,7 @@ export default function CareGuide() {
 
       try {
         const res = await fetch("/api/chat", {
+          signal: controller.signal,
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -132,6 +148,7 @@ export default function CareGuide() {
             })),
           }),
         });
+        if (controller.signal.aborted) return;
         const json = (await res.json()) as Partial<ChatReply> & { errors?: string[] };
         if (!res.ok || typeof json.reply !== "string") throw new Error(json.errors?.join(" ") || g.error);
         const reply: Msg = {
@@ -142,17 +159,23 @@ export default function CareGuide() {
           memory: json.memory,
           source: json.source,
         };
-        setMessages((m) => [...m, reply]);
+        if (controller.signal.aborted) return;
+        messagesRef.current = [...messagesRef.current, reply];
+        setMessages(messagesRef.current);
         if (voiceOn.current) speakReply(json.reply);
         else if (autoRead && speechSupported) readText(json.reply, g.voiceSpeaking);
       } catch (err) {
+        if (controller.signal.aborted) return;
         setError((err as Error).message || g.error);
         if (voiceOn.current) setVoice("paused");
       } finally {
-        setBusy(false);
+        if (request.current === controller) {
+          request.current = null;
+          setBusy(false);
+        }
       }
     },
-    [busy, lang, g.error, g.voiceSpeaking, autoRead, speechSupported, readText, speakReply],
+    [lang, g.error, g.voiceSpeaking, autoRead, speechSupported, readText, speakReply, stopSpeaking],
   );
 
   // ---------- Hands-free voice conversation ----------
@@ -160,12 +183,14 @@ export default function CareGuide() {
   const listen = useCallback(() => {
     const Ctor = getRecognitionCtor();
     if (!Ctor || !voiceOn.current) return;
-    stopSpeaking();
+    if (rec.current) return;
     const r = new Ctor();
     r.lang = speech;
     r.continuous = false; // one utterance per turn; the browser ends it after a pause
     r.interimResults = true;
     let finalText = "";
+    let heardText = "";
+    let failed = false;
     r.onresult = (e) => {
       let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -173,25 +198,49 @@ export default function CareGuide() {
         if (res.isFinal) finalText += res[0].transcript;
         else interim += res[0].transcript;
       }
-      setInput((finalText + interim).trim());
+      const candidate = (finalText + interim).trim();
+      // Ignore recognizable speaker echo. Headphones give the most reliable barge-in.
+      const normalize = (value: string) => value.toLocaleLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+      if (speaking.current && normalize(candidate) && normalize(spokenReply.current).includes(normalize(candidate))) {
+        finalText = "";
+        return;
+      }
+      if (candidate) {
+        heardText = candidate;
+        if (speaking.current) {
+          speaking.current = false;
+          stopSpeaking();
+        }
+        request.current?.abort();
+        request.current = null;
+        setBusy(false);
+        setVoice("listening");
+        setInput(candidate);
+      }
     };
     r.onerror = (e) => {
       if (e.error === "aborted" || e.error === "no-speech") return;
+      failed = true;
       setVoiceError(t.voice.errors[errorKey(e.error)]);
     };
     r.onend = () => {
       release(r);
+      if (rec.current !== r) return;
+      rec.current = null;
       if (!voiceOn.current) return;
-      if (finalText.trim()) void send(finalText);
-      else setVoice("paused"); // heard nothing: wait for a tap rather than looping forever
+      if (failed) { setVoice("paused"); return; }
+      if (heardText.trim()) void send(heardText);
+      window.setTimeout(() => { if (voiceOn.current) listenRef.current(); }, 150);
     };
     claim(r);
     rec.current = r;
     setVoiceError(null);
-    setVoice("listening");
+    if (!speaking.current && !request.current) setVoice("listening");
     try {
       r.start();
     } catch {
+      release(r);
+      rec.current = null;
       setVoice("paused");
     }
   }, [speech, stopSpeaking, send, t.voice.errors]);
@@ -205,6 +254,8 @@ export default function CareGuide() {
   function endVoice() {
     voiceOn.current = false;
     rec.current?.abort();
+    rec.current = null;
+    speaking.current = false;
     stopSpeaking();
     setVoice("off");
   }
@@ -236,6 +287,10 @@ export default function CareGuide() {
 
   function newChat() {
     endVoice();
+    request.current?.abort();
+    request.current = null;
+    setBusy(false);
+    messagesRef.current = [];
     setMessages([]);
     setDocs([]);
     setInput("");
@@ -359,8 +414,10 @@ export default function CareGuide() {
                     type="button"
                     className="btn btn--secondary"
                     onClick={() => {
+                      speaking.current = false;
                       stopSpeaking();
-                      setVoice("paused");
+                      setVoice("listening");
+                      listen();
                     }}
                   >
                     <Stop />
@@ -461,7 +518,7 @@ export default function CareGuide() {
                   }
                 }}
               />
-              <VoiceInput
+              {voice === "off" && <VoiceInput
                 fieldLabel={g.inputLabel}
                 targetId="chat-input"
                 continuous
@@ -469,7 +526,7 @@ export default function CareGuide() {
                   dictationBase.current = input;
                 }}
                 onTranscript={(spoken) => setInput(dictationBase.current ? `${dictationBase.current.trimEnd()} ${spoken}` : spoken)}
-              />
+              />}
             </div>
             <button type="submit" className="btn btn--primary" disabled={busy || (!input.trim() && !docs.length)}>
               <Send />

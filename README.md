@@ -201,3 +201,5 @@ Under reduced-motion settings, every movement becomes a short cross-fade.
 ---
 
 > **Reminder:** this repo starts **private**. If the hackathon needs a public link, switch it in GitHub **Settings → General → Danger Zone → Change visibility** before the 3 pm deadline.
+
+Voice conversations support interruption: the microphone remains active during replies and thinking. Speaking stops playback and supersedes a pending reply. Recognition restarts between utterances automatically; Stop speaking returns directly to listening. Headphones are recommended to reduce speaker echo. This uses browser speech recognition and synthesis, so voice quality, pause detection, and latency depend on the browser; it is not a native realtime audio model.
