@@ -111,3 +111,72 @@ export function Cobweb({ className }: { className?: string }) {
     </svg>
   );
 }
+
+export function Speaker({ size = 18 }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...base(size)}>
+      <path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" />
+      <path d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.5a8 8 0 0 1 0 11" />
+    </svg>
+  );
+}
+
+export function Sliders({ size = 18 }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...base(size)}>
+      <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+      <circle cx="16" cy="7" r="2" />
+      <circle cx="10" cy="17" r="2" />
+    </svg>
+  );
+}
+
+export function Play({ size = 16 }: P) {
+  return (
+    <svg viewBox="0 0 20 20" {...base(size)}>
+      <path d="M6.5 4.5v11l9-5.5z" fill="currentColor" fillOpacity="0.2" />
+    </svg>
+  );
+}
+
+export function Pause({ size = 16 }: P) {
+  return (
+    <svg viewBox="0 0 20 20" {...base(size)}>
+      <path d="M7 4.5v11M13 4.5v11" strokeWidth={2.2} />
+    </svg>
+  );
+}
+
+export function Stop({ size = 16 }: P) {
+  return (
+    <svg viewBox="0 0 20 20" {...base(size)}>
+      <rect x="5" y="5" width="10" height="10" rx="1" fill="currentColor" fillOpacity="0.2" />
+    </svg>
+  );
+}
+
+export function ExternalLink({ size = 14 }: P) {
+  return (
+    <svg viewBox="0 0 20 20" {...base(size)}>
+      <path d="M11 4h5v5M16 4l-7 7M14 11.5V15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h3.5" />
+    </svg>
+  );
+}
+
+export function Mic({ size = 18 }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...base(size)}>
+      <rect x="9" y="3.5" width="6" height="11" rx="3" />
+      <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v2.5" />
+    </svg>
+  );
+}
+
+export function Compass({ size = 18 }: P) {
+  return (
+    <svg viewBox="0 0 24 24" {...base(size)}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="m14.8 9.2-1.9 4.7-4.7 1.9 1.9-4.7z" />
+    </svg>
+  );
+}

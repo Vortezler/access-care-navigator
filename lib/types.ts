@@ -67,3 +67,15 @@ export const ACCESSIBILITY_LABELS: Record<AccessibilityKey, string> = {
 };
 
 export const ACCESSIBILITY_KEYS = Object.keys(ACCESSIBILITY_LABELS) as AccessibilityKey[];
+
+export type Specialty = (typeof SPECIALTIES)[number];
+
+/** "Which specialist should I see?" — a navigation suggestion, never a diagnosis. */
+export interface SpecialtySuggestion {
+  specialty: Specialty;
+  confidence: "low" | "medium" | "high";
+  reasoning: string;
+  alternatives: { specialty: Specialty; reason: string }[];
+  urgency: "emergency" | "urgent" | "routine";
+  urgencyNote: string;
+}

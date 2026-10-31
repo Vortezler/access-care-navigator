@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Clinic, IntakeData, TextSource } from "@/lib/types";
-import { buildIcsString, nextBusinessMorning } from "@/lib/ics";
+import { callReminderEvent, nextBusinessMorning } from "@/lib/ics";
 import { formatSlot } from "@/lib/session";
 import Dialog from "./Dialog";
-import { Calendar, Copy, Sparkle } from "./Icons";
+import CalendarActions from "./CalendarActions";
+import { useA11y } from "./A11yProvider";
+import { Copy, Sparkle, Speaker } from "./Icons";
 
 interface Props {
   clinic: Clinic | null;
@@ -29,6 +31,7 @@ export default function AdvocacyScriptModal({ clinic, intake, open, onClose }: P
   const [state, setState] = useState<State>({ kind: "loading" });
   const [copied, setCopied] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const { speechSupported, readText, readState, stop } = useA11y();
   const cache = useRef(new Map<string, { script: string; source: TextSource }>());
 
   useEffect(() => {
@@ -61,19 +64,6 @@ export default function AdvocacyScriptModal({ clinic, intake, open, onClose }: P
   }, [open, clinic, intake, attempt]);
 
   const reminder = nextBusinessMorning();
-
-  function downloadIcs() {
-    if (!clinic) return;
-    const ics = buildIcsString(clinic.name, clinic.phone, reminder.toISOString());
-    const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `call-${clinic.id}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
 
   async function copy(script: string) {
     try {
@@ -137,13 +127,29 @@ export default function AdvocacyScriptModal({ clinic, intake, open, onClose }: P
               <Copy />
               {copied ? "Copied" : "Copy script"}
             </button>
-            <button type="button" className="btn btn--secondary" onClick={downloadIcs}>
-              <Calendar />
-              Download calendar reminder (.ics)
-            </button>
+            {speechSupported && (
+              <button
+                type="button"
+                className="btn btn--secondary"
+                onClick={() => (readState === "idle" ? readText(state.script, "Reading your script") : stop())}
+              >
+                <Speaker />
+                {readState === "idle" ? "Listen to script" : "Stop listening"}
+              </button>
+            )}
           </div>
+          <h3 className="clinic__subhead" style={{ margin: "22px 0 10px" }}>
+            Remind me to call
+          </h3>
+          {clinic && (
+            <CalendarActions
+              event={callReminderEvent(clinic.name, clinic.phone, reminder.toISOString())}
+              filename={`call-${clinic.id}.ics`}
+              noun="reminder"
+            />
+          )}
           <p className="muted" style={{ margin: "12px 0 0", fontSize: "0.875rem" }}>
-            The reminder is set for {formatSlot(reminder.toISOString())}, when most front desks are open.
+            The reminder is for {formatSlot(reminder.toISOString())}, when most front desks are open.
           </p>
         </div>
       )}

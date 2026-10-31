@@ -79,8 +79,9 @@ export default function ClinicCard({ result, index, intake, onBook, onScript }: 
   return (
     <li>
       <article
-        className={`panel clinic reveal${index === 0 ? " clinic--top" : ""}`}
-        style={{ ["--i" as string]: Math.min(index + 2, 8) }}
+        className={`panel clinic${index === 0 ? " clinic--top" : ""}`}
+        data-reveal
+        style={{ ["--i" as string]: Math.min(index, 3) }}
         aria-labelledby={headingId}
       >
         <div className="clinic__head">

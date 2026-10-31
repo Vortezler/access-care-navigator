@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import Link from "next/link";
-import { MoonMark } from "@/components/Icons";
+import A11yProvider from "@/components/A11yProvider";
+import CalendarProvider from "@/components/CalendarProvider";
+import SiteHeader from "@/components/SiteHeader";
+import ReadAloudBar from "@/components/ReadAloudBar";
+import ScrollEffects from "@/components/ScrollEffects";
+import { PREFS_BOOT_SCRIPT } from "@/lib/prefs";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,36 +14,36 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#0d0b12",
-  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    // Saved display preferences set data-* attributes here before hydration.
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: PREFS_BOOT_SCRIPT }} />
+      </head>
       <body>
-        <a className="skip-link" href="#main">
-          Skip to main content
-        </a>
-        <header className="site-header">
-          <div className="site-header__inner">
-            <Link href="/" className="brand" aria-label="AccessCare Navigator, home">
-              <MoonMark className="brand__mark" />
-              <span>AccessCare Navigator</span>
-            </Link>
-            <Link href="/" className="btn btn--ghost">
-              Start over
-            </Link>
-          </div>
-        </header>
-        <main id="main" tabIndex={-1}>
-          {children}
-        </main>
-        <footer className="site-footer">
-          <p>
-            Demo build: clinics are fictional and booking is simulated. Your answers are used only to generate
-            this session&rsquo;s results and are never stored.
-          </p>
-        </footer>
+        <A11yProvider>
+          <CalendarProvider>
+            <a className="skip-link" href="#main">
+              Skip to main content
+            </a>
+            <SiteHeader />
+            <main id="main" tabIndex={-1}>
+              {children}
+            </main>
+            <footer className="site-footer">
+              <p>
+                Demo build: clinics are fictional and booking is simulated. Your answers are used only to generate this
+                session&rsquo;s results and are never stored. Nothing on this site is medical advice. Talk to a doctor
+                about your symptoms, and in an emergency call 911.
+              </p>
+            </footer>
+            <ReadAloudBar />
+            <ScrollEffects />
+          </CalendarProvider>
+        </A11yProvider>
       </body>
     </html>
   );

@@ -1,17 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Clinic } from "@/lib/types";
+import type { Clinic, IntakeData } from "@/lib/types";
+import { ACCESSIBILITY_KEYS, ACCESSIBILITY_LABELS } from "@/lib/types";
+import type { CalEvent } from "@/lib/ics";
 import { formatSlot } from "@/lib/session";
 import Dialog from "./Dialog";
+import CalendarActions from "./CalendarActions";
+import { useCalendar } from "./CalendarProvider";
 import { Alert } from "./Icons";
 
 interface Props {
   clinic: Clinic | null;
+  intake: IntakeData;
   open: boolean;
   onClose: () => void;
-  urgencyWindowDays: number;
 }
+
+const APPOINTMENT_MIN = 60;
 
 function confirmationNumber(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no look-alikes (0/O, 1/I)
@@ -20,16 +26,63 @@ function confirmationNumber(): string {
   return `CONF-${out}`;
 }
 
-export default function BookingModal({ clinic, open, onClose, urgencyWindowDays }: Props) {
+function appointmentEvent(clinic: Clinic, intake: IntakeData, slot: string, conf: string): CalEvent {
+  const start = new Date(slot);
+  const needs = ACCESSIBILITY_KEYS.filter((k) => intake.accessibilityRequirements[k]).map((k) => ACCESSIBILITY_LABELS[k]);
+  return {
+    title: `${intake.specialty} appointment at ${clinic.name}`,
+    description: [
+      `Confirmation: ${conf} (demo booking)`,
+      `Clinic phone: ${clinic.phone}`,
+      `Reason: ${intake.reasonForVisit}`,
+      needs.length ? `Accommodations requested: ${needs.join("; ")}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    location: clinic.address,
+    start,
+    end: new Date(start.getTime() + APPOINTMENT_MIN * 60_000),
+    alarmMinutes: 60,
+  };
+}
+
+export default function BookingModal({ clinic, intake, open, onClose }: Props) {
+  const { getBusy, connection } = useCalendar();
   const [slot, setSlot] = useState<string>("");
   const [confirmed, setConfirmed] = useState<{ number: string; slot: string } | null>(null);
+  const [clashes, setClashes] = useState<Set<string> | null>(null);
+  const [checking, setChecking] = useState(false);
+  const urgencyWindowDays = intake.urgencyWindowDays;
 
   useEffect(() => {
-    if (open) {
-      setSlot("");
-      setConfirmed(null);
-    }
-  }, [open, clinic?.id]);
+    if (!open) return;
+    setSlot("");
+    setConfirmed(null);
+    setClashes(null);
+    setChecking(false);
+    if (!clinic || !connection) return;
+    // Flag openings that overlap something already on the user's calendar.
+    const slots = clinic.openSlots.map((s) => Date.parse(s));
+    let cancelled = false;
+    setChecking(true);
+    getBusy(new Date(Math.min(...slots)), new Date(Math.max(...slots) + APPOINTMENT_MIN * 60_000)).then((busy) => {
+      if (cancelled) return;
+      setChecking(false);
+      if (!busy) return;
+      setClashes(
+        new Set(
+          clinic.openSlots.filter((s) => {
+            const a = Date.parse(s);
+            const b = a + APPOINTMENT_MIN * 60_000;
+            return busy.some((r) => r.start < b && r.end > a);
+          }),
+        ),
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, clinic, connection, getBusy]);
 
   if (!clinic) return <Dialog open={false} onClose={onClose} title="">{null}</Dialog>;
 
@@ -58,9 +111,15 @@ export default function BookingModal({ clinic, open, onClose, urgencyWindowDays 
           <p className="conf" aria-label={`Confirmation number ${confirmed.number.split("").join(" ")}`}>
             {confirmed.number}
           </p>
-          <p className="muted" style={{ fontSize: "0.875rem", margin: "6px 0 0" }}>
+          <p className="muted" style={{ fontSize: "0.875rem", margin: "6px 0 18px" }}>
             Demo booking — no real appointment was made.
           </p>
+          <CalendarActions
+            event={appointmentEvent(clinic, intake, confirmed.slot, confirmed.number)}
+            filename={`appointment-${clinic.id}.ics`}
+            noun="appointment"
+            align="center"
+          />
           <div className="dialog__footer">
             <button type="button" className="btn btn--primary" onClick={onClose}>
               Done
@@ -83,6 +142,7 @@ export default function BookingModal({ clinic, open, onClose, urgencyWindowDays 
             <div className="choices">
               {upcoming.map((s) => {
                 const inWindow = Date.parse(s) <= windowEnd;
+                const clash = clashes?.has(s);
                 return (
                   <label className="choice choice--radio" key={s}>
                     <input type="radio" name="slot" value={s} checked={slot === s} onChange={() => setSlot(s)} />
@@ -94,12 +154,20 @@ export default function BookingModal({ clinic, open, onClose, urgencyWindowDays 
                       <span className="choice__desc">
                         {inWindow ? `Within your ${urgencyWindowDays}-day window` : `Later than your ${urgencyWindowDays}-day window`}
                       </span>
+                      {clash !== undefined && (
+                        <span className={`choice__desc${clash ? " choice__desc--warn" : ""}`}>
+                          {clash ? "Clashes with something on your calendar" : "You’re free then"}
+                        </span>
+                      )}
                     </span>
                   </label>
                 );
               })}
             </div>
           </fieldset>
+          {checking && (
+            <p className="inline-note">Checking your Google Calendar for clashes…</p>
+          )}
           <div className="dialog__footer">
             <button type="submit" className="btn btn--primary" disabled={!slot} aria-disabled={!slot}>
               Confirm booking

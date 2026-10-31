@@ -106,7 +106,7 @@ export default function ResultsPage() {
         clinic={bookClinic}
         open={bookOpen}
         onClose={() => setBookOpen(false)}
-        urgencyWindowDays={intake.urgencyWindowDays}
+        intake={intake}
       />
       <AdvocacyScriptModal clinic={scriptClinic} intake={intake} open={scriptOpen} onClose={() => setScriptOpen(false)} />
     </div>

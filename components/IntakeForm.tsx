@@ -2,10 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { AccessibilityKey, IntakeData, MatchResult } from "@/lib/types";
+import type { AccessibilityKey, IntakeData, MatchResult, Specialty, SpecialtySuggestion, TextSource } from "@/lib/types";
 import { ACCESSIBILITY_KEYS, ACCESSIBILITY_LABELS, SPECIALTIES } from "@/lib/types";
 import { loadIntakeDraft, saveSession } from "@/lib/session";
-import { Alert, Check } from "./Icons";
+import { matchSpecialty, normalizeId, parseDays } from "@/lib/voice";
+import SuggestionCard from "./SuggestionCard";
+import VoiceInput from "./VoiceInput";
+import { Alert, Check, Compass } from "./Icons";
+
+/** Spoken names come back lower-case: "jordan rivera" -> "Jordan Rivera" */
+const titleCase = (t: string) => t.replace(/\b\p{L}/gu, (c) => c.toUpperCase());
+/** Append dictated text to what was already typed, as a new sentence where it makes sense. */
+function appendDictation(base: string, spoken: string): string {
+  const b = base.trimEnd();
+  const t = !b || /[.!?]$/.test(b) ? spoken.charAt(0).toUpperCase() + spoken.slice(1) : spoken;
+  return b ? `${b} ${t}` : t;
+}
 
 type Form = Omit<IntakeData, "urgencyWindowDays"> & { urgencyWindowDays: string };
 type FieldKey = "patientName" | "insurancePayer" | "memberId" | "specialty" | "reasonForVisit" | "urgencyWindowDays";
@@ -59,7 +71,7 @@ const LABELS: Record<FieldKey, string> = {
   insurancePayer: "Insurance",
   memberId: "Member ID",
   specialty: "Specialty",
-  reasonForVisit: "Reason for visit",
+  reasonForVisit: "What's going on? (reason for visit)",
   urgencyWindowDays: "How soon you need to be seen",
 };
 
@@ -84,6 +96,12 @@ export default function IntakeForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [status, setStatus] = useState("");
   const summaryRef = useRef<HTMLDivElement>(null);
+  // specialist suggestion
+  const [suggestion, setSuggestion] = useState<{ value: SpecialtySuggestion; source: TextSource; forText: string } | null>(null);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+  const suggestionHeading = useRef<HTMLHeadingElement>(null);
+  const dictationBase = useRef("");
 
   // "Edit search" from the results page comes back with ?edit=1 — restore the previous answers.
   useEffect(() => {
@@ -93,9 +111,58 @@ export default function IntakeForm() {
   }, []);
 
   function update<K extends keyof Form>(key: K, value: Form[K]) {
-    const next = { ...form, [key]: value };
-    setForm(next);
-    if (submitted) setErrors(validate(next)); // validate inline once the user has tried to submit
+    setForm((prev) => ({ ...prev, [key]: value })); // functional: voice typing fires many quick updates
+  }
+
+  // Take keyboard and screen-reader users straight to a new suggestion
+  useEffect(() => {
+    if (suggestion) suggestionHeading.current?.focus();
+  }, [suggestion]);
+
+  // Validate inline once the user has tried to submit
+  useEffect(() => {
+    if (submitted) setErrors(validate(form));
+  }, [form, submitted]);
+
+  async function suggest() {
+    const text = form.reasonForVisit.trim();
+    setSuggestError(null);
+    if (text.length < 3) {
+      setSuggestError("Describe what's going on first. A sentence or two is plenty.");
+      document.getElementById("reasonForVisit")?.focus();
+      return;
+    }
+    setSuggesting(true);
+    setStatus("Thinking about which specialist fits…");
+    try {
+      const res = await fetch("/api/suggest-specialty", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symptoms: text }),
+      });
+      const json = (await res.json()) as { suggestion?: SpecialtySuggestion; source?: TextSource; errors?: string[] };
+      if (!res.ok || !json.suggestion) throw new Error(json.errors?.join(" ") || "Couldn't get a suggestion.");
+      const sug = json.suggestion;
+      setSuggestion({ value: sug, source: json.source ?? "template", forText: text });
+      // Choose it for them; they can change it.
+      setForm((prev) => ({
+        ...prev,
+        specialty: sug.specialty,
+        urgencyWindowDays:
+          sug.urgency === "urgent" && Number(prev.urgencyWindowDays) > 3 ? "3" : prev.urgencyWindowDays,
+      }));
+      setStatus("");
+    } catch (err) {
+      setStatus("");
+      setSuggestError((err as Error).message);
+    } finally {
+      setSuggesting(false);
+    }
+  }
+
+  function chooseSpecialty(sp: Specialty) {
+    update("specialty", sp);
+    setStatus(`${sp} selected.`);
   }
 
   function toggleNeed(key: AccessibilityKey) {
@@ -198,108 +265,205 @@ export default function IntakeForm() {
         )}
       </div>
 
-      <fieldset className="panel reveal" style={{ ["--i" as string]: 2 }}>
+      <fieldset className="panel" data-reveal style={{ ["--i" as string]: 1 }}>
         <legend className="panel__legend">
-          <span className="panel__step" aria-hidden>1</span>About you
+          <span className="panel__step" aria-hidden>01</span>About you
         </legend>
-        <p className="panel__hint">So the clinic knows who&rsquo;s calling. This is a demo — use any details you like.</p>
+        <p className="panel__hint">
+          So the clinic knows who&rsquo;s calling. This is a demo — use any details you like. Every box has a microphone
+          button if you&rsquo;d rather speak than type.
+        </p>
         <div className="field">
           <label className="field__label" htmlFor="patientName">{LABELS.patientName}</label>
-          <input
-            className="input"
-            {...fieldProps("patientName")}
-            autoComplete="name"
-            value={form.patientName}
-            onChange={(e) => update("patientName", e.target.value)}
-          />
+          <div className="with-mic">
+            <input
+              className="input"
+              {...fieldProps("patientName")}
+              autoComplete="name"
+              value={form.patientName}
+              onChange={(e) => update("patientName", e.target.value)}
+            />
+            <VoiceInput fieldLabel="your name" targetId="patientName" onTranscript={(t) => update("patientName", titleCase(t))} />
+          </div>
           <FieldError k="patientName" />
         </div>
         <div className="grid-2">
           <div className="field">
             <label className="field__label" htmlFor="insurancePayer">{LABELS.insurancePayer}</label>
-            <input
-              className="input"
-              {...fieldProps("insurancePayer")}
-              placeholder="e.g. Aetna, Medicaid"
-              value={form.insurancePayer}
-              onChange={(e) => update("insurancePayer", e.target.value)}
-            />
+            <div className="with-mic">
+              <input
+                className="input"
+                {...fieldProps("insurancePayer")}
+                placeholder="e.g. Aetna, Medicaid"
+                value={form.insurancePayer}
+                onChange={(e) => update("insurancePayer", e.target.value)}
+              />
+              <VoiceInput
+                fieldLabel="your insurance company"
+                targetId="insurancePayer"
+                onTranscript={(t) => update("insurancePayer", titleCase(t))}
+              />
+            </div>
             <span className="field__help" id="insurancePayer-help">The company name on your card.</span>
             <FieldError k="insurancePayer" />
           </div>
           <div className="field">
             <label className="field__label" htmlFor="memberId">{LABELS.memberId}</label>
-            <input
-              className="input"
-              {...fieldProps("memberId")}
-              autoComplete="off"
-              spellCheck={false}
-              value={form.memberId}
-              onChange={(e) => update("memberId", e.target.value)}
-            />
-            <span className="field__help" id="memberId-help">Only used inside your call script.</span>
+            <div className="with-mic">
+              <input
+                className="input"
+                {...fieldProps("memberId")}
+                autoComplete="off"
+                spellCheck={false}
+                value={form.memberId}
+                onChange={(e) => update("memberId", e.target.value)}
+              />
+              <VoiceInput fieldLabel="your member ID" targetId="memberId" onTranscript={(t) => update("memberId", normalizeId(t))} />
+            </div>
+            <span className="field__help" id="memberId-help">
+              Only used inside your call script. Say &ldquo;dash&rdquo; for a hyphen.
+            </span>
             <FieldError k="memberId" />
           </div>
         </div>
       </fieldset>
 
-      <fieldset className="panel reveal" style={{ ["--i" as string]: 3 }}>
+      <fieldset className="panel" data-reveal style={{ ["--i" as string]: 2 }}>
         <legend className="panel__legend">
-          <span className="panel__step" aria-hidden>2</span>The care you need
+          <span className="panel__step" aria-hidden>02</span>The care you need
         </legend>
-        <p className="panel__hint">We&rsquo;ll only show clinics in this specialty.</p>
-        <div className="grid-2">
+        <p className="panel__hint">Tell us what&rsquo;s going on. Pick a specialty yourself, or let us suggest one.</p>
+        <div className="field">
+          <label className="field__label" htmlFor="reasonForVisit">{LABELS.reasonForVisit}</label>
+          <div className="with-mic">
+            <textarea
+              className="textarea"
+              {...fieldProps("reasonForVisit")}
+              value={form.reasonForVisit}
+              onChange={(e) => update("reasonForVisit", e.target.value)}
+            />
+            <VoiceInput
+              fieldLabel="your reason for visit"
+              targetId="reasonForVisit"
+              continuous
+              onStart={() => {
+                dictationBase.current = form.reasonForVisit;
+              }}
+              onTranscript={(t) => update("reasonForVisit", appendDictation(dictationBase.current, t))}
+            />
+          </div>
+          <span className="field__help" id="reasonForVisit-help">
+            Your symptoms in your own words: what it feels like, where, for how long, and what makes it better or worse.
+          </span>
+          <FieldError k="reasonForVisit" />
+        </div>
+
+        <div className="suggest-row">
+          <button type="button" className="btn btn--secondary" onClick={suggest} disabled={suggesting} aria-describedby="suggest-note">
+            {suggesting ? (
+              <>
+                <span className="dots" aria-hidden>
+                  <span />
+                  <span />
+                  <span />
+                </span>
+                Thinking it through…
+              </>
+            ) : (
+              <>
+                <Compass />
+                {suggestion ? "Suggest again" : "Suggest the right specialist"}
+              </>
+            )}
+          </button>
+          <span className="field__help" id="suggest-note">
+            An AI suggestion, not medical advice. A general physician can confirm the right specialist.
+          </span>
+        </div>
+        {suggestError && (
+          <p className="field__error" role="alert">
+            <Alert size={15} />
+            {suggestError}
+          </p>
+        )}
+        {suggestion && (
+          <SuggestionCard
+            ref={suggestionHeading}
+            suggestion={suggestion.value}
+            source={suggestion.source}
+            selected={form.specialty}
+            stale={form.reasonForVisit.trim() !== suggestion.forText}
+            onChoose={chooseSpecialty}
+          />
+        )}
+
+        <div className="grid-2" style={{ marginTop: 16 }}>
           <div className="field">
             <label className="field__label" htmlFor="specialty">{LABELS.specialty}</label>
-            <select
-              className="select"
-              {...fieldProps("specialty")}
-              value={form.specialty}
-              onChange={(e) => update("specialty", e.target.value)}
-            >
-              <option value="" disabled>
-                Choose one…
-              </option>
-              {SPECIALTIES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
+            <div className="with-mic">
+              <select
+                className="select"
+                {...fieldProps("specialty")}
+                value={form.specialty}
+                onChange={(e) => update("specialty", e.target.value)}
+              >
+                <option value="" disabled>
+                  Choose one…
                 </option>
-              ))}
-            </select>
+                {SPECIALTIES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+              <VoiceInput
+                fieldLabel="a specialty"
+                targetId="specialty"
+                onTranscript={(t, isFinal) => {
+                  if (!isFinal) return;
+                  const sp = matchSpecialty(t);
+                  if (sp) chooseSpecialty(sp);
+                  else setStatus(`Didn't recognise "${t}" as a specialty. Try saying, for example, "neurology".`);
+                }}
+              />
+            </div>
             <FieldError k="specialty" />
           </div>
           <div className="field">
             <label className="field__label" htmlFor="urgencyWindowDays">Need to be seen within (days)</label>
-            <input
-              className="input"
-              {...fieldProps("urgencyWindowDays")}
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={365}
-              value={form.urgencyWindowDays}
-              onChange={(e) => update("urgencyWindowDays", e.target.value)}
-            />
-            <span className="field__help" id="urgencyWindowDays-help">We&rsquo;ll highlight openings in this window.</span>
+            <div className="with-mic">
+              <input
+                className="input"
+                {...fieldProps("urgencyWindowDays")}
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={365}
+                value={form.urgencyWindowDays}
+                onChange={(e) => update("urgencyWindowDays", e.target.value)}
+              />
+              <VoiceInput
+                fieldLabel="how many days"
+                targetId="urgencyWindowDays"
+                onTranscript={(t, isFinal) => {
+                  if (!isFinal) return;
+                  const d = parseDays(t);
+                  if (d !== null) update("urgencyWindowDays", String(d));
+                  else setStatus(`Didn't catch a number in "${t}". Try "14" or "two weeks".`);
+                }}
+              />
+            </div>
+            <span className="field__help" id="urgencyWindowDays-help">
+              We&rsquo;ll highlight openings in this window. You can say &ldquo;two weeks&rdquo;.
+            </span>
             <FieldError k="urgencyWindowDays" />
           </div>
         </div>
-        <div className="field">
-          <label className="field__label" htmlFor="reasonForVisit">{LABELS.reasonForVisit}</label>
-          <textarea
-            className="textarea"
-            {...fieldProps("reasonForVisit")}
-            value={form.reasonForVisit}
-            onChange={(e) => update("reasonForVisit", e.target.value)}
-          />
-          <span className="field__help" id="reasonForVisit-help">A sentence or two, in your own words.</span>
-          <FieldError k="reasonForVisit" />
-        </div>
       </fieldset>
 
-      <fieldset className="panel reveal" style={{ ["--i" as string]: 4 }}>
+      <fieldset className="panel" data-reveal style={{ ["--i" as string]: 0 }}>
         <legend className="panel__legend">
-          <span className="panel__step" aria-hidden>3</span>Accessibility needs
+          <span className="panel__step" aria-hidden>03</span>Accessibility needs
         </legend>
         <p className="panel__hint">Choose everything that matters to you. We check each one, clinic by clinic.</p>
         <div className="choices choices--2">
@@ -320,9 +484,9 @@ export default function IntakeForm() {
         </div>
       </fieldset>
 
-      <fieldset className="panel reveal" style={{ ["--i" as string]: 5 }}>
+      <fieldset className="panel" data-reveal style={{ ["--i" as string]: 0 }}>
         <legend className="panel__legend">
-          <span className="panel__step" aria-hidden>4</span>How should we help?
+          <span className="panel__step" aria-hidden>04</span>How should we help?
         </legend>
         <p className="panel__hint">You stay in control either way.</p>
         <div className="choices choices--2">
@@ -352,7 +516,7 @@ export default function IntakeForm() {
         </div>
       </fieldset>
 
-      <div className="form-actions reveal" style={{ ["--i" as string]: 6 }}>
+      <div className="form-actions" data-reveal style={{ ["--i" as string]: 0 }}>
         <button type="submit" className="btn btn--primary btn--lg" disabled={loading}>
           {loading ? (
             <>

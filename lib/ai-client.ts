@@ -10,10 +10,13 @@ const TIMEOUT_MS = 20_000;
 const BEDROCK_MODEL_ID = process.env.BEDROCK_MODEL_ID || "anthropic.claude-opus-5-5";
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-5-5";
 
-interface Prompt {
+export interface Prompt {
   system: string;
   user: string;
   maxTokens: number;
+  effort?: "low" | "medium" | "high";
+  /** JSON Schema: the Anthropic API enforces it; on Bedrock the prompt asks for it and we validate. */
+  schema?: Record<string, unknown>;
 }
 
 export interface GeneratedText {
@@ -59,7 +62,10 @@ async function callAnthropic(p: Prompt): Promise<string> {
   const res = await anthropic.messages.create({
     model: ANTHROPIC_MODEL,
     max_tokens: p.maxTokens,
-    output_config: { effort: "low" },
+    output_config: {
+      effort: p.effort ?? "low",
+      ...(p.schema ? { format: { type: "json_schema" as const, schema: p.schema } } : {}),
+    },
     system: p.system,
     messages: [{ role: "user", content: p.user }],
   });
@@ -93,6 +99,38 @@ async function generate(p: Prompt, template: () => string): Promise<GeneratedTex
     }
   }
   return { text: template(), source: "template" };
+}
+
+/**
+ * Like generate(), but for JSON answers. Model output that doesn't parse or doesn't
+ * pass `parse` is treated as a failure and the fallback is used — never half-trusted.
+ */
+export async function generateStructured<T>(
+  p: Prompt,
+  parse: (raw: unknown) => T | null,
+  fallback: () => T,
+): Promise<{ value: T; source: TextSource }> {
+  const r = await generate(p, () => "");
+  if (r.source !== "template") {
+    const value = parse(extractJson(r.text));
+    if (value) return { value, source: r.source };
+    console.warn("[ai-client] Model output didn't match the expected shape; using fallback.");
+  }
+  return { value: fallback(), source: "template" };
+}
+
+function extractJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    const m = text.match(/\{[\s\S]*\}/); // tolerate prose or code fences around the object
+    if (!m) return null;
+    try {
+      return JSON.parse(m[0]);
+    } catch {
+      return null;
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
